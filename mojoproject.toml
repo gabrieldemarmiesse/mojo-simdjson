@@ -1,0 +1,12 @@
+[project]
+authors = ["gabrieldemarmiesse <gabrieldemarmiesse@gmail.com>"]
+channels = ["conda-forge", "https://conda.modular.com/max-nightly"]
+description = "Add a short description here"
+name = "mojo-simdjson"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+max = ">=25.1.0.dev2024121105,<26"
