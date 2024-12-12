@@ -1,4 +1,4 @@
-from simdjson import haswell
+from mojo_simdjson import haswell
 
 @value
 struct JsonCharacterBlock:
