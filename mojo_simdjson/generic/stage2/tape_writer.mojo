@@ -40,5 +40,6 @@ struct TapeWriter:
         self.next_tape_loc[] = value2
         self.next_tape_loc += 1
 
-    fn write(inout self, tape_loc: UnsafePointer[UInt64], value: UInt64, value_type: TapeType):
+    @staticmethod
+    fn write(tape_loc: UnsafePointer[UInt64], value: UInt64, value_type: TapeType):
         tape_loc[] = value | (value_type.cast[DType.uint64]() << 56)
