@@ -7,6 +7,10 @@ from .tape_writer import TapeWriter
 from mojo_simdjson.include.generic import atom_parsing
 from mojo_simdjson.include.internal import tape_type
 from mojo_simdjson.include.internal.tape_type import TapeType
+from sys import sizeof
+from memory import memcpy
+
+
 struct TapeBuilder:
     var tape: TapeWriter
     var current_string_buffer_loc: UnsafePointer[UInt8]
@@ -95,4 +99,26 @@ struct TapeBuilder:
         return errors.SUCCESS
     
 
-        
+    fn on_string_start(inout self, json_iterator: JsonIterator) -> UnsafePointer[UInt8]:
+        self.tape.append(
+            int(self.current_string_buffer_loc) - int(json_iterator.dom_parser[].document.string_buf.unsafe_ptr()), 
+            tape_type.STRING
+        )
+        return self.current_string_buffer_loc + sizeof[UInt32]()
+    
+    fn onstring_end(inout self, dst: UnsafePointer[UInt8]):
+        # Should we do -1 to account for null termination? I don't think so.
+        str_length = UInt32(int(dst) - int(self.current_string_buffer_loc + sizeof[UInt32]()))
+
+        memcpy(
+            dest=self.current_string_buffer_loc,
+            src=UnsafePointer.address_of(str_length).bitcast[UInt8](),
+            count=sizeof[UInt32](),
+        )
+        # Warning: here we differ from the C++ version, we don't add null termination.
+        # This is because we'll be working with StringSlice, which doesn't
+        # have null termination in Mojo.
+
+        # Uncomment this if one day we need null termination
+        # dst[] = 0
+        self.current_string_buffer_loc = dst # + 1
