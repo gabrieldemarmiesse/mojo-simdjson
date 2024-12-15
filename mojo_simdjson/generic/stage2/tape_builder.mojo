@@ -8,8 +8,8 @@ from mojo_simdjson.include.generic import atom_parsing
 from mojo_simdjson.include.internal import tape_type
 from mojo_simdjson.include.internal.tape_type import TapeType
 from sys import sizeof
-from memory import memcpy
-
+from memory import memcpy, memset
+from mojo_simdjson.globals import SIMDJSON_PADDING
 
 struct TapeBuilder:
     var tape: TapeWriter
@@ -36,94 +36,6 @@ struct TapeBuilder:
     fn visit_primitive(inout self, inout json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
         return json_iterator.visit_primitive(self, value)
 
-    """
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
-  return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
-  return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
-  start_container(iter);
-  return SUCCESS;
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
-  start_container(iter);
-  return SUCCESS;
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
-  start_container(iter);
-  return SUCCESS;
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
-  return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
-  return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
-  constexpr uint32_t start_tape_index = 0;
-  tape.append(start_tape_index, internal::tape_type::ROOT);
-  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
-  return SUCCESS;
-}
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_key(json_iterator &iter, const uint8_t *key) noexcept {
-  return visit_string(iter, key, true);
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
-  iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
-  return SUCCESS;
-}
-
-simdjson_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
-  iter.log_value(key ? "key" : "string");
-  uint8_t *dst = on_start_string(iter);
-  dst = stringparsing::parse_string(value+1, dst, false); // We do not allow replacement when the escape characters are invalid.
-  if (dst == nullptr) {
-    iter.log_error("Invalid escape in string");
-    return STRING_ERROR;
-  }
-  on_end_string(dst);
-  return SUCCESS;
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
-  return visit_string(iter, value);
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
-  iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
-}
-
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
-  //
-  // We need to make a copy to make sure that the string is space terminated.
-  // This is not about padding the input, which should already padded up
-  // to len + SIMDJSON_PADDING. However, we have no control at this stage
-  // on how the padding was done. What if the input string was padded with nulls?
-  // It is quite common for an input string to have an extra null character (C string).
-  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-  // document, but the string "9\0" by itself is fine. So we make a copy and
-  // pad the input with spaces when we know that there is just one input element.
-  // This copy is relatively expensive, but it will almost never be called in
-  // practice unless you are in the strange scenario where you have many JSON
-  // documents made of single atoms.
-  //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
-  if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy.get());
-  return error;
-}
-
-    """
     fn visit_empty_object(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
         return self.empty_container(json_iterator, tape_type.START_OBJECT, tape_type.END_OBJECT)
     
@@ -167,7 +79,7 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(
     
     fn visit_string(inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
         dst = self.on_string_start(json_iterator)
-        dst = stringparsing.parse_string(value + 1, dst, False)
+        dst = string_parsing.parse_string(value + 1, dst, False)
         if not(dst):
             return errors.STRING_ERROR
         self.onstring_end(dst)
@@ -175,6 +87,36 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(
 
     fn visit_root_string(inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
         return self.visit_string(json_iterator, value)
+
+    fn visit_number(inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
+        return number_parsing.parse_number(value, self.tape)
+
+    fn visit_root_number(inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
+        # We need to make a copy to make sure that the string is space terminated.
+        # This is not about padding the input, which should already padded up
+        # to len + SIMDJSON_PADDING. However, we have no control at this stage
+        # on how the padding was done. What if the input string was padded with nulls?
+        # It is quite common for an input string to have an extra null character (C string).
+        # We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+        # document, but the string "9\0" by itself is fine. So we make a copy and
+        # pad the input with spaces when we know that there is just one input element.
+        # This copy is relatively expensive, but it will almost never be called in
+        # practice unless you are in the strange scenario where you have many JSON
+        # documents made of single atoms.
+        copy = List[UInt8](capacity=json_iterator.remaining_len() + SIMDJSON_PADDING)
+        memcpy(
+            dest=copy.unsafe_ptr(),
+            src=value,
+            count=json_iterator.remaining_len()
+        )
+        memset(
+            ptr=copy.unsafe_ptr() + json_iterator.remaining_len(),
+            value=ord(' '),
+            count=SIMDJSON_PADDING
+        )
+        return self.visit_number(json_iterator, copy.unsafe_ptr())
+
+
 
     fn visit_true_atom(inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
         if atom_parsing.is_valid_true_atom(value):
