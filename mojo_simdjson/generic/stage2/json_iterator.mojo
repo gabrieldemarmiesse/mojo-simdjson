@@ -1,5 +1,7 @@
 from memory import UnsafePointer
 from ...include.generic.dom_parser_implementation import DomParserImplementation
+from mojo_simdjson.errors import ErrorType
+from .tape_builder import TapeBuilder
 
 
 struct JsonIterator:
@@ -36,3 +38,39 @@ struct JsonIterator:
         return self.buffer[int(self.dom_parser[].structural_indexes[int(self.dom_parser[].n_structural_indexes - 1)])]
 
     
+    fn visit_root_primitive(inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]) -> ErrorType:
+        # this should technically be a switch statement
+        value = pointer[]
+        if value == ord('"'):
+            return visitor.visit_root_string(self, pointer)
+        elif value == ord('t'):
+            return visitor.visit_root_true_atom(self, pointer)
+        elif value == ord('f'):
+            return visitor.visit_root_false_atom(self, pointer)
+        elif value == ord('n'):
+            return visitor.visit_root_null_atom(self, pointer)
+        elif value == ord('-') or (UInt8(ord('0')) <= value <= UInt8(ord('9'))):
+            return visitor.visit_root_number(self, pointer)
+        else:
+            return errors.TAPE_ERROR
+
+
+    fn visit_primitive(inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]) -> ErrorType:
+        # this should technically be a switch statement
+        value = pointer[]
+        # Use the fact that most scalars are going to be either strings or numbers.
+        if value == ord('"'):
+            return visitor.visit_string(self, pointer)
+        elif value == ord('-') or (UInt8(ord('0')) <= value <= UInt8(ord('9'))):
+            return visitor.visit_number(self, pointer)
+        
+        # true, false, null are uncommon.
+        # This should technically be a switch statement
+        if value == ord('t'):
+            return visitor.visit_true_atom(self, pointer)
+        elif value == ord('f'):
+            return visitor.visit_false_atom(self, pointer)
+        elif value == ord('n'):
+            return visitor.visit_null_atom(self, pointer)
+        else:
+            return errors.TAPE_ERROR
