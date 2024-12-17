@@ -10,6 +10,8 @@ from mojo_simdjson.include.internal.tape_type import TapeType
 from sys import sizeof
 from memory import memcpy, memset
 from mojo_simdjson.globals import SIMDJSON_PADDING
+from . import string_parsing
+from mojo_simdjson.include.generic import number_parsing
 
 struct TapeBuilder:
     var tape: TapeWriter
