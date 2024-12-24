@@ -16,6 +16,42 @@ struct JsonIterator:
         self.dom_parser = UnsafePointer.address_of(dom_parser)
         self.depth = 0
 
+
+    # so here we're supposed to have a finite state machine with 
+    # goto statements left and right. Since we don't have goto
+    # statements in Mojo (as far as I know), we're going with a recursive
+    # approach. There is a tradeoff here, as we might get a recursion limit
+    # earlier, but we have more data on the stack so it's slightly easier 
+    # to manage memory. Also, with goto, we wouldn't pay the cost of function calls
+    # and returns, so that plays a role.
+    fn walk_document(self, visitor: TapeBuilder) -> ErrorType:
+        if self.at_eof():
+            return errors.EMPTY
+
+    fn object_begin(self) -> ErrorType:
+        pass
+
+    fn object_field(self) -> ErrorType:
+        pass
+    
+    fn object_continue(self) -> ErrorType:
+        pass
+    
+    fn scope_end(self) -> ErrorType:
+        pass
+
+    fn array_begin(self) -> ErrorType:
+        pass
+    
+    fn array_value(self) -> ErrorType:
+        pass
+    
+    fn array_continue(self) -> ErrorType:
+        pass
+    
+    fn document_end(self) -> ErrorType:
+        pass
+
     fn peek(self) -> UnsafePointer[UInt8]:
         return self.buffer + self.next_structural[]
 

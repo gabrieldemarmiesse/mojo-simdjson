@@ -1,64 +1,7 @@
 from memory import UnsafePointer
 from mojo_simdjson.include.haswell.stringparsing_defs import BackslashAndQuote
 from mojo_simdjson.include.generic import jsoncharutils
-"""
 
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-"""
 
 fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_ptr: UnsafePointer[UnsafePointer[UInt8]], allow_replacement: Bool) -> Bool:
     """Handle a unicode codepoint.
