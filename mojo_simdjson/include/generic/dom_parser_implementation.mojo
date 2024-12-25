@@ -4,6 +4,7 @@ from memory import UnsafePointer
 from ...generic.stage1.json_structural_indexer import JsonStructuralIndexer
 from utils import StringSlice
 
+
 @value
 struct OpenContainer:
     var tape_index: UInt32
@@ -59,7 +60,7 @@ struct DomParserImplementation:
 
     fn stage1(inout self, buffer: StringSlice) -> errors.ErrorType:
         return self.stage1(buffer.as_bytes())
-    
+
     fn stage1(inout self, buffer: Span[UInt8]) -> errors.ErrorType:
         self.allocate(len(buffer))
         self.buf = buffer.unsafe_ptr()

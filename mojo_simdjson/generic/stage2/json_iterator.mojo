@@ -4,6 +4,7 @@ from mojo_simdjson.errors import ErrorType
 from .tape_builder import TapeBuilder
 from sys.intrinsics import likely, unlikely
 
+
 struct WalkState:
     alias document_start = 0
     alias object_begin = 1
@@ -15,21 +16,28 @@ struct WalkState:
     alias array_continue = 7
     alias document_end = 8
 
+
 struct JsonIterator:
     var buffer: UnsafePointer[UInt8]
     var next_structural: UnsafePointer[UInt32]
     var dom_parser: UnsafePointer[DomParserImplementation]
     var depth: UInt32
 
-    fn __init__(out self, dom_parser: DomParserImplementation, start_structural_index: Int):
+    fn __init__(
+        out self,
+        dom_parser: DomParserImplementation,
+        start_structural_index: Int,
+    ):
         self.buffer = dom_parser.buf
-        self.next_structural = dom_parser.structural_indexes.unsafe_ptr() + start_structural_index
+        self.next_structural = (
+            dom_parser.structural_indexes.unsafe_ptr() + start_structural_index
+        )
         self.dom_parser = UnsafePointer.address_of(dom_parser)
         self.depth = 0
 
     fn walk_document(inout self, inout visitor: TapeBuilder) -> ErrorType:
         walk_state = WalkState.document_start
-        
+
         while True:
             if walk_state == WalkState.document_start:
                 if self.at_eof():
@@ -37,7 +45,7 @@ struct JsonIterator:
                 error_code = visitor.visit_document_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-                
+
                 value = self.advance()
 
                 # This should be a switch statement
@@ -47,7 +55,7 @@ struct JsonIterator:
                 elif value[] == ord("["):
                     if self.last_structural() != ord("]"):
                         return errors.TAPE_ERROR
-                
+
                 if value[] == ord("{"):
                     if self.peek()[] == ord("}"):
                         error_code = visitor.visit_empty_object(self)
@@ -68,10 +76,10 @@ struct JsonIterator:
                     error_code = self.visit_root_primitive(visitor, value)
                     if error_code != errors.SUCCESS:
                         return error_code
-                
+
                 walk_state = WalkState.document_end
                 continue
-            
+
             elif walk_state == WalkState.object_begin:
                 self.depth += 1
                 if self.depth > self.dom_parser[].max_depth():
@@ -149,7 +157,7 @@ struct JsonIterator:
                     continue
                 else:
                     return errors.TAPE_ERROR
-            
+
             elif walk_state == WalkState.scope_end:
                 self.depth -= 1
                 if self.depth == 0:
@@ -223,13 +231,19 @@ struct JsonIterator:
                     continue
                 else:
                     return errors.TAPE_ERROR
-            
+
             elif walk_state == WalkState.document_end:
                 error_code = visitor.visit_document_end(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-                self.dom_parser[].next_structural_index = UInt32(int(self.next_structural) - int(self.dom_parser[].structural_indexes.unsafe_ptr()))
-                if self.dom_parser[].next_structural_index != self.dom_parser[].n_structural_indexes:
+                self.dom_parser[].next_structural_index = UInt32(
+                    int(self.next_structural)
+                    - int(self.dom_parser[].structural_indexes.unsafe_ptr())
+                )
+                if (
+                    self.dom_parser[].next_structural_index
+                    != self.dom_parser[].n_structural_indexes
+                ):
                     # More than one JSON value at the root of the document, or extra characters at the end of the JSON!
                     return errors.TAPE_ERROR
                 return errors.SUCCESS
@@ -247,48 +261,58 @@ struct JsonIterator:
 
     # not 100% sure about this one
     fn at_eof(self) -> Bool:
-        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr() + int(self.dom_parser[].n_structural_indexes)
-    
+        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr() + int(
+            self.dom_parser[].n_structural_indexes
+        )
+
     fn at_beginning(self) -> Bool:
         return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr()
 
     fn last_structural(self) -> UInt8:
-        return self.buffer[int(self.dom_parser[].structural_indexes[int(self.dom_parser[].n_structural_indexes - 1)])]
+        return self.buffer[
+            int(
+                self.dom_parser[].structural_indexes[
+                    int(self.dom_parser[].n_structural_indexes - 1)
+                ]
+            )
+        ]
 
-    
-    fn visit_root_primitive(inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]) -> ErrorType:
+    fn visit_root_primitive(
+        inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
+    ) -> ErrorType:
         # this should technically be a switch statement
         value = pointer[]
         if value == ord('"'):
             return visitor.visit_root_string(self, pointer)
-        elif value == ord('t'):
+        elif value == ord("t"):
             return visitor.visit_root_true_atom(self, pointer)
-        elif value == ord('f'):
+        elif value == ord("f"):
             return visitor.visit_root_false_atom(self, pointer)
-        elif value == ord('n'):
+        elif value == ord("n"):
             return visitor.visit_root_null_atom(self, pointer)
-        elif value == ord('-') or (UInt8(ord('0')) <= value <= UInt8(ord('9'))):
+        elif value == ord("-") or (UInt8(ord("0")) <= value <= UInt8(ord("9"))):
             return visitor.visit_root_number(self, pointer)
         else:
             return errors.TAPE_ERROR
 
-
-    fn visit_primitive(inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]) -> ErrorType:
+    fn visit_primitive(
+        inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
+    ) -> ErrorType:
         # this should technically be a switch statement
         value = pointer[]
         # Use the fact that most scalars are going to be either strings or numbers.
         if value == ord('"'):
             return visitor.visit_string(self, pointer)
-        elif value == ord('-') or (UInt8(ord('0')) <= value <= UInt8(ord('9'))):
+        elif value == ord("-") or (UInt8(ord("0")) <= value <= UInt8(ord("9"))):
             return visitor.visit_number(self, pointer)
-        
+
         # true, false, null are uncommon.
         # This should technically be a switch statement
-        if value == ord('t'):
+        if value == ord("t"):
             return visitor.visit_true_atom(self, pointer)
-        elif value == ord('f'):
+        elif value == ord("f"):
             return visitor.visit_false_atom(self, pointer)
-        elif value == ord('n'):
+        elif value == ord("n"):
             return visitor.visit_null_atom(self, pointer)
         else:
             return errors.TAPE_ERROR

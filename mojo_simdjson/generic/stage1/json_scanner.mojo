@@ -2,12 +2,19 @@ from .json_string_scanner import JsonStringBlock, JsonStringScanner
 from ..json_character_block import JsonCharacterBlock
 from memory import UnsafePointer
 from ...debug import bin_display_reverse
+
+
 struct JsonBlock:
     var _string: JsonStringBlock
     var _characters: JsonCharacterBlock
     var _follows_potential_nonquote_scalar: UInt64
 
-    fn __init__(out self: Self, owned strings: JsonStringBlock, characters: JsonCharacterBlock, follows_potential_nonquote_scalar: UInt64):
+    fn __init__(
+        out self: Self,
+        owned strings: JsonStringBlock,
+        characters: JsonCharacterBlock,
+        follows_potential_nonquote_scalar: UInt64,
+    ):
         self._string = strings^
         self._characters = characters
         self._follows_potential_nonquote_scalar = follows_potential_nonquote_scalar
@@ -37,7 +44,7 @@ struct JsonBlock:
     @always_inline
     fn potential_scalar_start(self) -> UInt64:
         value = self._characters.scalar() & ~self.follows_potential_scalar()
-        #bin_display_reverse(value, "potential_scalar_start")
+        # bin_display_reverse(value, "potential_scalar_start")
         return value
 
     @always_inline
@@ -52,7 +59,7 @@ struct JsonScanner:
     fn __init__(out self: Self):
         self.prev_scalar = 0
         self.string_scanner = JsonStringScanner()
-    
+
     fn next(inout self, in_: SIMD[DType.uint8, 64]) -> JsonBlock:
         strings = self.string_scanner.next(in_)
         characters = JsonCharacterBlock.classify(in_)
@@ -63,7 +70,6 @@ struct JsonScanner:
 
     fn finish(self) -> errors.ErrorType:
         return self.string_scanner.finish()
-
 
 
 fn follows(match_: UInt64, inout overflow: UInt64) -> UInt64:

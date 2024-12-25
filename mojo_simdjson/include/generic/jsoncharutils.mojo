@@ -1,7 +1,10 @@
-
-from mojo_simdjson.internal.jsoncharutils_tables import structural_or_whitespace, digit_to_val32
+from mojo_simdjson.internal.jsoncharutils_tables import (
+    structural_or_whitespace,
+    digit_to_val32,
+)
 from collections import InlineArray
 from memory import UnsafePointer
+
 
 fn negate_inlinearray(array: InlineArray[UInt8, 256]) -> InlineArray[UInt8, 256]:
     var result = InlineArray[UInt8, 256](0)
@@ -35,13 +38,12 @@ fn hex_to_u32_nocheck(src: UnsafePointer[UInt8]) -> UInt32:
     return v1 | v2 | v3 | v4
 
 
-
 fn codepoint_to_utf8(cp: UInt32, c: UnsafePointer[UInt8]) -> Int:
     """Given a code point cp, writes to c
     the utf-8 code, outputting the length in
     bytes, if the length is zero, the code point
     is invalid.
-    
+
     This can possibly be made faster using pdep
     and clz and table lookups, but JSON documents
     have few escaped code points, and the following
@@ -49,11 +51,11 @@ fn codepoint_to_utf8(cp: UInt32, c: UnsafePointer[UInt8]) -> Int:
     """
     if cp <= 0x7F:
         c[0] = cp.cast[DType.uint8]()
-        return 1 # ascii
+        return 1  # ascii
     if cp <= 0x7FF:
         c[0] = ((cp >> 6) + 192).cast[DType.uint8]()
         c[1] = ((cp & 63) + 128).cast[DType.uint8]()
-        return 2 # universal plane
+        return 2  # universal plane
         # Surrogates are treated elsewhere...
         # } //else if (0xd800 <= cp && cp <= 0xdfff) {
         # return 0; // surrogates // could put assert here
@@ -62,7 +64,7 @@ fn codepoint_to_utf8(cp: UInt32, c: UnsafePointer[UInt8]) -> Int:
         c[1] = (((cp >> 6) & 63) + 128).cast[DType.uint8]()
         c[2] = ((cp & 63) + 128).cast[DType.uint8]()
         return 3
-    elif cp <= 0x10FFFF: # if you know you have a valid code point, this
+    elif cp <= 0x10FFFF:  # if you know you have a valid code point, this
         # is not needed
         c[0] = ((cp >> 18) + 240).cast[DType.uint8]()
         c[1] = (((cp >> 12) & 63) + 128).cast[DType.uint8]()
@@ -70,4 +72,4 @@ fn codepoint_to_utf8(cp: UInt32, c: UnsafePointer[UInt8]) -> Int:
         c[3] = ((cp & 63) + 128).cast[DType.uint8]()
         return 4
     # will return 0 when the code point was too large.
-    return 0 # bad r
+    return 0  # bad r

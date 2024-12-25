@@ -1,5 +1,3 @@
-
-
 struct Document:
     var tape: List[UInt64]
     var string_buf: List[UInt8]

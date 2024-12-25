@@ -4,30 +4,271 @@ from mojo_simdjson.include.generic import jsoncharutils
 from collections import InlineArray
 
 # TODO: compute it at compile-time, let's avoid magic tables
-alias escape_map = InlineArray[UInt8,256](
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, # 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, # 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+alias escape_map = InlineArray[UInt8, 256](
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,  # 0x0.
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0x22,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0x2F,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,  # 0x4.
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0x5C,
+    0,
+    0,
+    0,  # 0x5.
+    0,
+    0,
+    0x08,
+    0,
+    0,
+    0,
+    0x0C,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0x0A,
+    0,  # 0x6.
+    0,
+    0,
+    0x0D,
+    0,
+    0x09,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,  # 0x7.
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 )
 
 
-fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_ptr: UnsafePointer[UnsafePointer[UInt8]], allow_replacement: Bool) -> Bool:
+fn handle_unicode_codepoint(
+    src_ptr: UnsafePointer[UnsafePointer[UInt8]],
+    dst_ptr: UnsafePointer[UnsafePointer[UInt8]],
+    allow_replacement: Bool,
+) -> Bool:
     """Handle a unicode codepoint.
 
     Write appropriate values into dest
@@ -37,7 +278,7 @@ fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_pt
     We work in little-endian then swap at write time
     """
     # Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-    alias substitution_code_point = UInt32(0xfffd)
+    alias substitution_code_point = UInt32(0xFFFD)
 
     # jsoncharutils.hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
     # conversion is not valid; we defer the check for this to inside the
@@ -48,11 +289,11 @@ fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_pt
     # If we found a high surrogate, we must
     # check for low surrogate for characters
     # outside the Basic Multilingual Plane.
-    if code_point >= 0xd800 and code_point < 0xdc00:
+    if code_point >= 0xD800 and code_point < 0xDC00:
         src_data = src_ptr[0]
         # Compiler optimizations convert this to a single 16-bit load and compare on most platforms in C++
         # Not sure if this is the case in Mojo. We might have to check.
-        alias backslash_u_as_simd = SIMD[DType.uint8, 2](ord('\\'), ord('u'))
+        alias backslash_u_as_simd = SIMD[DType.uint8, 2](ord("\\"), ord("u"))
 
         if not all(src_data.load[width=2]() == backslash_u_as_simd):
             if not allow_replacement:
@@ -66,16 +307,16 @@ fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_pt
             #
             # Check that code_point_2 is in the range 0xdc00..0xdfff
             # and that code_point_2 was parsed from valid hex.
-            low_bit = code_point_2 - 0xdc00
+            low_bit = code_point_2 - 0xDC00
             if low_bit >> 10:
                 if not allow_replacement:
                     return False
                 code_point = substitution_code_point
             else:
-                code_point = (((code_point - 0xd800) << 10) | low_bit) + 0x10000
+                code_point = (((code_point - 0xD800) << 10) | low_bit) + 0x10000
                 src_ptr[0] += 6
 
-    elif code_point >= 0xdc00 and code_point <= 0xdfff:
+    elif code_point >= 0xDC00 and code_point <= 0xDFFF:
         # If we encounter a low surrogate (not preceded by a high surrogate)
         # then we have an error.
         if not allow_replacement:
@@ -88,10 +329,14 @@ fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_pt
 
 # The first argument is strange here. It's modified,
 # but in the function call it's given a temporary variable,
-# so any modification is lost. To represent that, I set 
+# so any modification is lost. To represent that, I set
 # the first argument as owned (same as inout but not visible from outside).
-fn parse_string(owned src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8], allow_replacement: Bool) -> UnsafePointer[UInt8]:
-    """Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. 
+fn parse_string(
+    owned src: UnsafePointer[UInt8],
+    inout dst: UnsafePointer[UInt8],
+    allow_replacement: Bool,
+) -> UnsafePointer[UInt8]:
+    """Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote.
     There must be an unescaped quote terminating the string. It returns the final output
     position as pointer. In case of error (e.g., the string has bad escaped codes),
     then null_ptr is returned. It is assumed that the output buffer is large
@@ -110,14 +355,16 @@ fn parse_string(owned src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8]
             backslash_dist = backslash_quote.backslash_index()
             escape_char = src[backslash_dist + 1]
             # we encountered backslash first. Handle backslash
-            if escape_char == ord('u'):
+            if escape_char == ord("u"):
                 # move src/dst up to the start; they will be further adjusted
                 # within the unicode codepoint handling code.
                 src += backslash_dist
                 dst += backslash_dist
                 if not handle_unicode_codepoint(
-                    UnsafePointer.address_of(src), 
-                    UnsafePointer.address_of(dst), allow_replacement):
+                    UnsafePointer.address_of(src),
+                    UnsafePointer.address_of(dst),
+                    allow_replacement,
+                ):
                     return UnsafePointer[UInt8]()
             else:
                 # simple 1:1 conversion. Will eat bs_dist+2 characters in input and
@@ -135,4 +382,3 @@ fn parse_string(owned src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8]
             # encountered neither.
             src += BackslashAndQuote.BYTES_PROCESSED
             dst += BackslashAndQuote.BYTES_PROCESSED
-        

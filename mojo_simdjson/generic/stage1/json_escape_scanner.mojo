@@ -19,9 +19,7 @@ struct JsonEscapeScanner:
         @parameter
         if not SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT:
             if not backslash:
-                return _EscapedAndEscape(
-                    self.next_escaped_without_backslashes(), 0
-                )
+                return _EscapedAndEscape(self.next_escaped_without_backslashes(), 0)
 
         escape_and_terminal_code = self.next_escape_and_terminal_code(
             backslash & ~self.next_is_escaped
@@ -39,7 +37,5 @@ struct JsonEscapeScanner:
     fn next_escape_and_terminal_code(self, potential_escape: UInt64) -> UInt64:
         maybe_escaped = UInt64(potential_escape << 1)
         maybe_escaped_and_odd_bits = maybe_escaped | ODD_BITS
-        even_series_codes_and_odd_bits = (
-            maybe_escaped_and_odd_bits - potential_escape
-        )
+        even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape
         return even_series_codes_and_odd_bits ^ ODD_BITS

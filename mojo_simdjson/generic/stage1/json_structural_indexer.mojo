@@ -10,9 +10,11 @@ from memory.unsafe import pack_bits
 import bit
 from ...debug import bin_display_reverse
 
+
 struct Utf8Checker:
     # TODO: Use the stdlib for this.
     pass
+
     fn __init__(out self: Self):
         pass
 
@@ -21,7 +23,7 @@ struct Utf8Checker:
 
     fn check_eof(self):
         pass
-    
+
     fn errors(self) -> errors.ErrorType:
         return errors.SUCCESS
 
@@ -35,8 +37,8 @@ struct BitIndexer:
     fn write_index(inout self, idx: UInt32, inout bits: UInt64, i: Int):
         # could reverse bit here if faster on some platforms
         (self.tail + i)[] = idx + bit.count_trailing_zeros(bits).cast[DType.uint32]()
-        bits = bits & ( bits - 1) # TODO: use blsr
-     
+        bits = bits & (bits - 1)  # TODO: use blsr
+
     fn write(inout self, idx: UInt32, owned bits: UInt64):
         # In some instances, the next branch is expensive because it is mispredicted.
         # Unfortunately, in other cases,
@@ -48,11 +50,8 @@ struct BitIndexer:
 
         for i in range(count):
             self.write_index(idx, bits, i)
-        
+
         self.tail += count
-
-
-
 
 
 struct JsonStructuralIndexer:
@@ -62,7 +61,6 @@ struct JsonStructuralIndexer:
     var prev_structurals: UInt64
     var unescaped_chars_error: UInt64
 
-
     fn __init__(out self: Self, structural_indexes: Span[UInt32]):
         self.scanner = JsonScanner()
         self.checker = Utf8Checker()
@@ -71,21 +69,23 @@ struct JsonStructuralIndexer:
         self.unescaped_chars_error = 0
 
     @staticmethod
-    fn index[step_size: Int](buffer: Span[UInt8], inout parser: DomParserImplementation) -> errors.ErrorType:
+    fn index[
+        step_size: Int
+    ](buffer: Span[UInt8], inout parser: DomParserImplementation) -> errors.ErrorType:
         if len(buffer) > parser.capacity():
             return errors.CAPACITY
 
         if len(buffer) == 0:
             return errors.EMPTY
-        
+
         reader = BufferBlockReader[step_size](buffer)
         indexer = JsonStructuralIndexer(parser.structural_indexes)
 
         while reader.has_full_block():
             full_block = reader.full_block()
             indexer.step[step_size](full_block.unsafe_ptr(), reader)
-            _ = full_block # live long enough
-        
+            _ = full_block  # live long enough
+
         # take care of the last partial block
         block = InlineArray[UInt8, step_size](0x20)
         number_of_chars = reader.get_remainder(block.unsafe_ptr())
@@ -93,8 +93,14 @@ struct JsonStructuralIndexer:
             return errors.UNEXPECTED_ERROR
         indexer.step[step_size](block.unsafe_ptr(), reader)
         return indexer.finish(parser, reader.block_index(), len(buffer))
-        
-    fn step[step_size: Int](inout self: Self, block: UnsafePointer[UInt8], inout reader: BufferBlockReader[step_size]):
+
+    fn step[
+        step_size: Int
+    ](
+        inout self: Self,
+        block: UnsafePointer[UInt8],
+        inout reader: BufferBlockReader[step_size],
+    ):
         @parameter
         for start in range(0, step_size, 64):
             in_ = (block + start).load[width=64]()
@@ -102,8 +108,13 @@ struct JsonStructuralIndexer:
             self.next(in_, json_block, reader.block_index() + start)
         reader.advance()
 
-    fn next(inout self, in_: SIMD[DType.uint8, 64], json_block: JsonBlock, index: Int):
-        unescaped = pack_bits(in_ <=0x1F)
+    fn next(
+        inout self,
+        in_: SIMD[DType.uint8, 64],
+        json_block: JsonBlock,
+        index: Int,
+    ):
+        unescaped = pack_bits(in_ <= 0x1F)
 
         self.checker.check_next_input(in_)
         self.indexer.write(UInt32(index - 64), self.prev_structurals)
@@ -111,32 +122,35 @@ struct JsonStructuralIndexer:
         self.prev_structurals = json_block.structural_start()
         self.unescaped_chars_error |= json_block.non_quote_inside_string(unescaped)
 
-    fn finish(inout self, inout parser: DomParserImplementation, idx: Int, length: Int) -> errors.ErrorType:
-        self.indexer.write(UInt32(idx-64), self.prev_structurals)
+    fn finish(
+        inout self, inout parser: DomParserImplementation, idx: Int, length: Int
+    ) -> errors.ErrorType:
+        self.indexer.write(UInt32(idx - 64), self.prev_structurals)
         error = self.scanner.finish()
 
         # Is more complicated in the original implementation
-        if error !=errors.SUCCESS:
+        if error != errors.SUCCESS:
             return error
 
         if self.unescaped_chars_error:
             return errors.UNESCAPED_CHARS
-        
+
         pointer_to_start = UnsafePointer.address_of(parser.structural_indexes[0])
         parser.n_structural_indexes = (int(self.indexer.tail) - int(pointer_to_start)) // 4
         print("n_structural_indexes, in func", parser.n_structural_indexes)
 
-        parser.structural_indexes[int(parser.n_structural_indexes)] = UInt32(length) # used later in partial == stage1_mode::streaming_final
+        parser.structural_indexes[int(parser.n_structural_indexes)] = UInt32(
+            length
+        )  # used later in partial == stage1_mode::streaming_final
         parser.structural_indexes[int(parser.n_structural_indexes + 1)] = UInt32(length)
         parser.structural_indexes[int(parser.n_structural_indexes + 2)] = 0
         parser.next_structural_index = 0
 
         if parser.n_structural_indexes == 0:
             return errors.EMPTY
-        
+
         if parser.structural_indexes[int(parser.n_structural_indexes - 1)] > length:
             return errors.UNEXPECTED_ERROR
 
         self.checker.check_eof()
         return self.checker.errors()
-        

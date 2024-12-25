@@ -23,7 +23,7 @@ struct TapeWriter:
 
     fn skip(inout self):
         self.next_tape_loc += 1
-    
+
     fn skip_large_integer(inout self):
         self.next_tape_loc += 2
 

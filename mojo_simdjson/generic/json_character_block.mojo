@@ -1,5 +1,6 @@
 from mojo_simdjson import haswell
 
+
 @value
 struct JsonCharacterBlock:
     var _whitespace: UInt64
@@ -20,4 +21,3 @@ struct JsonCharacterBlock:
     @always_inline
     fn scalar(self) -> UInt64:
         return ~(self.op() | self.whitespace())
-

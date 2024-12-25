@@ -3,6 +3,8 @@ from ...stuff import eq, prefix_xor
 from memory.unsafe import bitcast
 from ... import errors
 from ...debug import bin_display_reverse
+
+
 @value
 struct JsonStringBlock:
     var _escaped: UInt64
@@ -55,9 +57,7 @@ struct JsonStringScanner:
         quote = eq['"'](in_) & ~escaped
 
         in_string = prefix_xor(quote) ^ self.prev_in_string
-        self.prev_in_string = bitcast[DType.uint64](
-            (bitcast[DType.int64](in_string) >> 63)
-        )
+        self.prev_in_string = bitcast[DType.uint64]((bitcast[DType.int64](in_string) >> 63))
         bin_display_reverse(escaped, "escaped")
         bin_display_reverse(quote, "quote")
         bin_display_reverse(in_string, "in_string")

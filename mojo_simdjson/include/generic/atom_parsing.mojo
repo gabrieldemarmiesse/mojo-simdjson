@@ -1,7 +1,8 @@
-
 from memory import UnsafePointer
 from memory import bitcast
-from mojo_simdjson.include.generic.jsoncharutils import is_not_structural_or_whitespace
+from mojo_simdjson.include.generic.jsoncharutils import (
+    is_not_structural_or_whitespace,
+)
 
 alias true_as_simd = SIMD[DType.uint8, 4](ord("t"), ord("r"), ord("u"), ord("e"))
 alias alse_as_simd = SIMD[DType.uint8, 4](ord("a"), ord("l"), ord("s"), ord("e"))
