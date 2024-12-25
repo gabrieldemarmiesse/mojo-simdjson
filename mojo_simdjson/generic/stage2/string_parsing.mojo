@@ -1,6 +1,30 @@
 from memory import UnsafePointer
 from mojo_simdjson.include.haswell.stringparsing_defs import BackslashAndQuote
 from mojo_simdjson.include.generic import jsoncharutils
+from collections import InlineArray
+
+# TODO: compute it at compile-time, let's avoid magic tables
+alias escape_map = InlineArray[UInt8,256](
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, # 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, # 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, # 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+)
 
 
 fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_ptr: UnsafePointer[UnsafePointer[UInt8]], allow_replacement: Bool) -> Bool:
@@ -62,8 +86,11 @@ fn handle_unicode_codepoint(src_ptr: UnsafePointer[UnsafePointer[UInt8]], dst_pt
     return offset > 0
 
 
-
-fn parse_string(inout src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8], allow_replacement: Bool) -> UnsafePointer[UInt8]:
+# The first argument is strange here. It's modified,
+# but in the function call it's given a temporary variable,
+# so any modification is lost. To represent that, I set 
+# the first argument as owned (same as inout but not visible from outside).
+fn parse_string(owned src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8], allow_replacement: Bool) -> UnsafePointer[UInt8]:
     """Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. 
     There must be an unescaped quote terminating the string. It returns the final output
     position as pointer. In case of error (e.g., the string has bad escaped codes),
@@ -88,14 +115,16 @@ fn parse_string(inout src: UnsafePointer[UInt8], inout dst: UnsafePointer[UInt8]
                 # within the unicode codepoint handling code.
                 src += backslash_dist
                 dst += backslash_dist
-                if not handle_unicode_codepoint(src, dst, allow_replacement):
+                if not handle_unicode_codepoint(
+                    UnsafePointer.address_of(src), 
+                    UnsafePointer.address_of(dst), allow_replacement):
                     return UnsafePointer[UInt8]()
             else:
                 # simple 1:1 conversion. Will eat bs_dist+2 characters in input and
                 # write bs_dist+1 characters to output
                 # note this may reach beyond the part of the buffer we've actually
                 # seen. I think this is ok
-                escape_result = escape_map[escape_char]
+                escape_result = escape_map[int(escape_char)]
                 if escape_result == 0:
                     return UnsafePointer[UInt8]()  # bogus escape value is an error
                 dst[backslash_dist] = escape_result

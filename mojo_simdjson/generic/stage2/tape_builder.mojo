@@ -29,8 +29,7 @@ struct TapeBuilder:
         dom_parser.document = document^
         iter_ = JsonIterator(dom_parser, 0)
         builder = TapeBuilder(dom_parser.document)
-        #return iter_.walk_document(builder)
-        return 0
+        return iter_.walk_document(builder)
     
     fn visit_root_primitive(inout self, inout json_iterator: JsonIterator, value: UnsafePointer[UInt8]) -> errors.ErrorType:
         return json_iterator.visit_root_primitive(self, value)
