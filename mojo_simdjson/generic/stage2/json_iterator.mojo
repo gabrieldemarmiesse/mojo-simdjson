@@ -4,6 +4,17 @@ from mojo_simdjson.errors import ErrorType
 from .tape_builder import TapeBuilder
 from sys.intrinsics import likely, unlikely
 
+struct WalkState:
+    alias document_start = 0
+    alias object_begin = 1
+    alias object_field = 2
+    alias object_continue = 3
+    alias scope_end = 4
+    alias array_begin = 5
+    alias array_value = 6
+    alias array_continue = 7
+    alias document_end = 8
+
 struct JsonIterator:
     var buffer: UnsafePointer[UInt8]
     var next_structural: UnsafePointer[UInt32]
@@ -16,199 +27,212 @@ struct JsonIterator:
         self.dom_parser = UnsafePointer.address_of(dom_parser)
         self.depth = 0
 
-
-    # So here we're supposed to have a finite state machine with 
-    # goto statements left and right. Since we don't have goto
-    # statements in Mojo (as far as I know), we're going with a recursive
-    # approach. Note that this is not an optimal approach because 
-    # it increase the stack size for every new structural character.
-    # Meaning we can only process small jsons. We should rewrite it with loops.
-    fn walk_document(self, visitor: TapeBuilder) -> ErrorType:
-        if self.at_eof():
-            return errors.EMPTY
-        eror_code = visitor.visit_document_start(self)
-        if error_code != errors.SUCCESS:
-            return error_code
+    fn walk_document(inout self, inout visitor: TapeBuilder) -> ErrorType:
+        walk_state = WalkState.document_start
         
-        value = self.advance()
-
-        # This should be a switch statement
-        if value[] == ord("{"):
-            if self.last_structural() != ord("}"):
-                return errors.TAPE_ERROR
-        elif value[] == ord("["):
-            if self.last_structural() != ord("]"):
-                return errors.TAPE_ERROR
-        
-        if value[] == ord("{"):
-            if self.peek()[] == ord("}"):
-                error_code = visitor.visit_empty_object(self)
+        while True:
+            if walk_state == WalkState.document_start:
+                if self.at_eof():
+                    return errors.EMPTY
+                error_code = visitor.visit_document_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.object_begin(visitor)
-        elif value[] == ord("["):
-            if self.peek()[] == ord("]"):
-                error_code = visitor.visit_empty_array(self)
+                
+                value = self.advance()
+
+                # This should be a switch statement
+                if value[] == ord("{"):
+                    if self.last_structural() != ord("}"):
+                        return errors.TAPE_ERROR
+                elif value[] == ord("["):
+                    if self.last_structural() != ord("]"):
+                        return errors.TAPE_ERROR
+                
+                if value[] == ord("{"):
+                    if self.peek()[] == ord("}"):
+                        error_code = visitor.visit_empty_object(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.object_begin
+                        continue
+                elif value[] == ord("["):
+                    if self.peek()[] == ord("]"):
+                        error_code = visitor.visit_empty_array(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.array_begin
+                        continue
+                else:
+                    error_code = self.visit_root_primitive(visitor, value)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                
+                walk_state = WalkState.document_end
+                continue
+            
+            elif walk_state == WalkState.object_begin:
+                self.depth += 1
+                if self.depth > self.dom_parser[].max_depth():
+                    return errors.DEPTH_ERROR
+                self.dom_parser[].is_array[int(self.depth)] = False
+                error_code = visitor.visit_object_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.array_begin(visitor)
-        else:
-            error_code = self.visit_root_primitive(visitor, value)
-            if error_code != errors.SUCCESS:
-                return error_code
-        
-        return self.document_end(visitor)
 
-    fn object_begin(self, visitor: TapeBuilder) -> ErrorType:
-        self.depth += 1
-        if self.depth > self.dom_parser[].max_depth:
-            return errors.DEPTH_ERROR
-        self.dom_parser.is_array[self.depth] = False
-        error_code = visitor.visit_object_start(self)
-        if error_code != errors.SUCCESS:
-            return error_code
-
-        key = self.advance()
-        if key[] != ord('"'):
-            # object must start with a key
-            return errors.TAPE_ERROR
-        error_code = visitor.increment_count(self)
-        if error_code != errors.SUCCESS:
-            return error_code
-        error_code = visitor.visit_key(self, key)
-        if error_code != errors.SUCCESS:
-            return error_code
-        return self.object_field(visitor)
-
-    fn object_field(self, visitor: TapeBuilder) -> ErrorType:
-        if unlikely(self.advance()[] != ord(":")):
-            # Missing colon after key in object
-            return errors.TAPE_ERROR
-        
-        value = self.advance()
-        # This should be a switch statement
-        if value[] == ord("{"):
-            if self.peek()[] == ord("}"):
-                self.advance()
-                error_code = visitor.visit_empty_object(self)
+                key = self.advance()
+                if key[] != ord('"'):
+                    # object must start with a key
+                    return errors.TAPE_ERROR
+                error_code = visitor.increment_count(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.object_begin(visitor)
-        elif value[] == ord("["):
-            if self.peek()[] == ord("]"):
-                self.advance()
-                error_code = visitor.visit_empty_array(self)
+                error_code = visitor.visit_key(self, key)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.array_begin(visitor)
-        else:
-            error_code = self.visit_primitive(visitor, value)
-            if error_code != errors.SUCCESS:
-                return error_code
+                walk_state = WalkState.object_field
+                continue
 
-        return self.object_continue(visitor)
+            elif walk_state == WalkState.object_field:
+                if unlikely(self.advance()[] != ord(":")):
+                    # Missing colon after key in object
+                    return errors.TAPE_ERROR
+                value = self.advance()
+                # This should be a switch statement
+                if value[] == ord("{"):
+                    if self.peek()[] == ord("}"):
+                        _ = self.advance()
+                        error_code = visitor.visit_empty_object(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.object_begin
+                        continue
+                elif value[] == ord("["):
+                    if self.peek()[] == ord("]"):
+                        _ = self.advance()
+                        error_code = visitor.visit_empty_array(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.array_begin
+                        continue
+                else:
+                    error_code = self.visit_primitive(visitor, value)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                walk_state = WalkState.object_continue
+                continue
 
-    fn object_continue(self, visitor: TapeBuilder) -> ErrorType:
-        # this should technically be a switch statement
-        value = self.advance()[]
-        if value == ord(","):
-            error_code = visitor.increment_count(self)
-            if error_code != errors.SUCCESS:
-                return error_code
-            key = self.advance()
-            if key[] != ord('"'):
-                # Key string missing at beginning of field in object
-                return errors.TAPE_ERROR
-            error_code = visitor.visit_key(self, key)
-            if error_code != errors.SUCCESS:
-                return error_code
-            return self.object_field(visitor)
-        elif value == ord("}"):
-            error_code = visitor.visit_object_end(self)
-            if error_code != errors.SUCCESS:
-                return error_code
-            return self.scope_end(visitor)
-        else:
-            return errors.TAPE_ERROR
+            elif walk_state == WalkState.object_continue:
+                # this should technically be a switch statement
+                next_char = self.advance()[]
+                if next_char == ord(","):
+                    error_code = visitor.increment_count(self)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                    key = self.advance()
+                    if key[] != ord('"'):
+                        # Key string missing at beginning of field in object
+                        return errors.TAPE_ERROR
+                    error_code = visitor.visit_key(self, key)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                    walk_state = WalkState.object_field
+                    continue
+                elif next_char == ord("}"):
+                    error_code = visitor.visit_object_end(self)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                    walk_state = WalkState.scope_end
+                    continue
+                else:
+                    return errors.TAPE_ERROR
+            
+            elif walk_state == WalkState.scope_end:
+                self.depth -= 1
+                if self.depth == 0:
+                    walk_state = WalkState.document_end
+                    continue
+                if self.dom_parser[].is_array[int(self.depth)]:
+                    walk_state = WalkState.array_continue
+                    continue
+                walk_state = WalkState.object_continue
+                continue
 
-    fn scope_end(self, visitor: TapeBuilder) -> ErrorType:
-        self.depth -= 1
-        if self.depth == 0:
-            return self.document_end(visitor)
-        if self.dom_parser[].is_array[self.depth]:
-            return self.array_continue(visitor)
-        return self.object_continue(visitor)
-
-    fn array_begin(self, visitor: TapeBuilder) -> ErrorType:
-        self.depth += 1
-        if self.depth >= self.dom_parser[].max_depth:
-            # Exceeded max depth
-            return errors.DEPTH_ERROR
-        self.dom_parser[].is_array[self.depth] = True
-        error_code = visitor.visit_array_start(self)
-        if error_code != errors.SUCCESS:
-            return error_code
-        error_code = visitor.increment_count(self)
-        if error_code != errors.SUCCESS:
-            return error_code
-        return self.array_value(visitor)
-
-    fn array_value(self, visitor: TapeBuilder) -> ErrorType:
-        value = self.advance()
-        # this should technically be a switch statement
-        if value[] == ord("{"):
-            if self.peek()[] == ord("}"):
-                self.advance()
-                # Empty object
-                error_code = visitor.visit_empty_object(self)
+            elif walk_state == WalkState.array_begin:
+                self.depth += 1
+                if self.depth >= self.dom_parser[].max_depth():
+                    # Exceeded max depth
+                    return errors.DEPTH_ERROR
+                self.dom_parser[].is_array[int(self.depth)] = True
+                error_code = visitor.visit_array_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.object_begin(visitor)
-        elif value[] == ord("["):
-            if self.peek()[] == ord("]"):
-                self.advance()
-                # Empty array
-                error_code = visitor.visit_empty_array(self)
+                error_code = visitor.increment_count(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-            else:
-                return self.array_begin(visitor)
-        else:
-            error_code = self.visit_primitive(visitor, value)
-            if error_code != errors.SUCCESS:
-                return error_code
-        return self.array_continue(visitor)
+                walk_state = WalkState.array_value
+                continue
 
-    fn array_continue(self, visitor: TapeBuilder) -> ErrorType:
-        # this should technically be a switch statement
-        value = self.advance()[]
-        if value == ord(","):
-            error_code = visitor.increment_count(self)
-            if error_code != errors.SUCCESS:
-                return error_code
-            return self.array_value(visitor)
-        elif value == ord("]"):
-            error_code = visitor.visit_array_end(self)
-            if error_code != errors.SUCCESS:
-                return error_code
-            return self.scope_end(visitor)
-        else:
-            return errors.TAPE_ERROR
-    
-    fn document_end(self, visitor: TapeBuilder) -> ErrorType:
-        error_code = visitor.visit_document_end(self)
-        if error_code != errors.SUCCESS:
-            return error_code
-        self.dom_parser[].next_structural_index = UInt32(self.next_structural - self.dom_parser[].structural_indexes.unsafe_ptr())
-        if self.dom_parser[].next_structural_index != self.dom_parser[].n_structural_indexes:
-            # More than one JSON value at the root of the document, or extra characters at the end of the JSON!
-            return errors.TAPE_ERROR
-        return errors.SUCCESS
+            elif walk_state == WalkState.array_value:
+                value = self.advance()
+                # this should technically be a switch statement
+                if value[] == ord("{"):
+                    if self.peek()[] == ord("}"):
+                        _ = self.advance()
+                        # Empty object
+                        error_code = visitor.visit_empty_object(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.object_begin
+                        continue
+                elif value[] == ord("["):
+                    if self.peek()[] == ord("]"):
+                        _ = self.advance()
+                        # Empty array
+                        error_code = visitor.visit_empty_array(self)
+                        if error_code != errors.SUCCESS:
+                            return error_code
+                    else:
+                        walk_state = WalkState.array_begin
+                        continue
+                else:
+                    error_code = self.visit_primitive(visitor, value)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                walk_state = WalkState.array_continue
+                continue
+
+            elif walk_state == WalkState.array_continue:
+                # this should technically be a switch statement
+                next_character = self.advance()[]
+                if next_character == ord(","):
+                    error_code = visitor.increment_count(self)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                    walk_state = WalkState.array_value
+                    continue
+                elif next_character == ord("]"):
+                    error_code = visitor.visit_array_end(self)
+                    if error_code != errors.SUCCESS:
+                        return error_code
+                    walk_state = WalkState.scope_end
+                    continue
+                else:
+                    return errors.TAPE_ERROR
+            
+            elif walk_state == WalkState.document_end:
+                error_code = visitor.visit_document_end(self)
+                if error_code != errors.SUCCESS:
+                    return error_code
+                self.dom_parser[].next_structural_index = UInt32(int(self.next_structural) - int(self.dom_parser[].structural_indexes.unsafe_ptr()))
+                if self.dom_parser[].next_structural_index != self.dom_parser[].n_structural_indexes:
+                    # More than one JSON value at the root of the document, or extra characters at the end of the JSON!
+                    return errors.TAPE_ERROR
+                return errors.SUCCESS
 
     fn peek(self) -> UnsafePointer[UInt8]:
         return self.buffer + self.next_structural[]

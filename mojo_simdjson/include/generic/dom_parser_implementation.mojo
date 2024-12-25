@@ -48,6 +48,9 @@ struct DomParserImplementation:
         self._capacity = other._capacity
         self._max_depth = other._max_depth
 
+    fn max_depth(self) -> Int:
+        return self._max_depth
+
     fn capacity(self) -> Int:
         return self._capacity
 
