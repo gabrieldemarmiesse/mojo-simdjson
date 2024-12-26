@@ -330,10 +330,10 @@ fn handle_unicode_codepoint(
 # The first argument is strange here. It's modified,
 # but in the function call it's given a temporary variable,
 # so any modification is lost. To represent that, I set
-# the first argument as owned (same as inout but not visible from outside).
+# the first argument as owned (same as mut but not visible from outside).
 fn parse_string(
     owned src: UnsafePointer[UInt8],
-    inout dst: UnsafePointer[UInt8],
+    mut dst: UnsafePointer[UInt8],
     allow_replacement: Bool,
 ) -> UnsafePointer[UInt8]:
     """Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote.

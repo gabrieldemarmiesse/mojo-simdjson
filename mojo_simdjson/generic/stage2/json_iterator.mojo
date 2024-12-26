@@ -35,7 +35,7 @@ struct JsonIterator:
         self.dom_parser = UnsafePointer.address_of(dom_parser)
         self.depth = 0
 
-    fn walk_document(inout self, inout visitor: TapeBuilder) -> ErrorType:
+    fn walk_document(mut self, mut visitor: TapeBuilder) -> ErrorType:
         walk_state = WalkState.document_start
 
         while True:
@@ -251,7 +251,7 @@ struct JsonIterator:
     fn peek(self) -> UnsafePointer[UInt8]:
         return self.buffer + self.next_structural[]
 
-    fn advance(inout self) -> UnsafePointer[UInt8]:
+    fn advance(mut self) -> UnsafePointer[UInt8]:
         pointer_to_current = self.peek()
         self.next_structural += 1
         return pointer_to_current
@@ -278,7 +278,7 @@ struct JsonIterator:
         ]
 
     fn visit_root_primitive(
-        inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
+        mut self, mut visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
     ) -> ErrorType:
         # this should technically be a switch statement
         value = pointer[]
@@ -296,7 +296,7 @@ struct JsonIterator:
             return errors.TAPE_ERROR
 
     fn visit_primitive(
-        inout self, inout visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
+        mut self, mut visitor: TapeBuilder, pointer: UnsafePointer[UInt8]
     ) -> ErrorType:
         # this should technically be a switch statement
         value = pointer[]

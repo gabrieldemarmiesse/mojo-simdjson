@@ -15,7 +15,7 @@ struct JsonEscapeScanner:
     fn __init__(out self: Self):
         self.next_is_escaped = 0
 
-    fn next(inout self, backslash: UInt64) -> _EscapedAndEscape:
+    fn next(mut self, backslash: UInt64) -> _EscapedAndEscape:
         @parameter
         if not SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT:
             if not backslash:
@@ -29,7 +29,7 @@ struct JsonEscapeScanner:
         self.next_is_escaped = escape >> 63
         return _EscapedAndEscape(escaped, escape)
 
-    fn next_escaped_without_backslashes(inout self) -> UInt64:
+    fn next_escaped_without_backslashes(mut self) -> UInt64:
         escaped = self.next_is_escaped
         self.next_is_escaped = 0
         return escaped

@@ -34,12 +34,12 @@ struct BitIndexer:
     fn __init__(out self: Self, structural_indexes: Span[UInt32]):
         self.tail = structural_indexes.unsafe_ptr()
 
-    fn write_index(inout self, idx: UInt32, inout bits: UInt64, i: Int):
+    fn write_index(mut self, idx: UInt32, mut bits: UInt64, i: Int):
         # could reverse bit here if faster on some platforms
         (self.tail + i)[] = idx + bit.count_trailing_zeros(bits).cast[DType.uint32]()
         bits = bits & (bits - 1)  # TODO: use blsr
 
-    fn write(inout self, idx: UInt32, owned bits: UInt64):
+    fn write(mut self, idx: UInt32, owned bits: UInt64):
         # In some instances, the next branch is expensive because it is mispredicted.
         # Unfortunately, in other cases,
         # it helps tremendously.
@@ -71,7 +71,7 @@ struct JsonStructuralIndexer:
     @staticmethod
     fn index[
         step_size: Int
-    ](buffer: Span[UInt8], inout parser: DomParserImplementation) -> errors.ErrorType:
+    ](buffer: Span[UInt8], mut parser: DomParserImplementation) -> errors.ErrorType:
         if len(buffer) > parser.capacity():
             return errors.CAPACITY
 
@@ -97,9 +97,9 @@ struct JsonStructuralIndexer:
     fn step[
         step_size: Int
     ](
-        inout self: Self,
+        mut self: Self,
         block: UnsafePointer[UInt8],
-        inout reader: BufferBlockReader[step_size],
+        mut reader: BufferBlockReader[step_size],
     ):
         @parameter
         for start in range(0, step_size, 64):
@@ -109,7 +109,7 @@ struct JsonStructuralIndexer:
         reader.advance()
 
     fn next(
-        inout self,
+        mut self,
         in_: SIMD[DType.uint8, 64],
         json_block: JsonBlock,
         index: Int,
@@ -123,7 +123,7 @@ struct JsonStructuralIndexer:
         self.unescaped_chars_error |= json_block.non_quote_inside_string(unescaped)
 
     fn finish(
-        inout self, inout parser: DomParserImplementation, idx: Int, length: Int
+        mut self, mut parser: DomParserImplementation, idx: Int, length: Int
     ) -> errors.ErrorType:
         self.indexer.write(UInt32(idx - 64), self.prev_structurals)
         error = self.scanner.finish()

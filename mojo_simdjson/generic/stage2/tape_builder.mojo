@@ -25,7 +25,7 @@ struct TapeBuilder:
     # TODO: add streaming
     @staticmethod
     fn parse_document(
-        inout dom_parser: DomParserImplementation, owned document: Document
+        mut dom_parser: DomParserImplementation, owned document: Document
     ) -> errors.ErrorType:
         dom_parser.document = document^
         iter_ = JsonIterator(dom_parser, 0)
@@ -33,46 +33,46 @@ struct TapeBuilder:
         return iter_.walk_document(builder)
 
     fn visit_root_primitive(
-        inout self,
-        inout json_iterator: JsonIterator,
+        mut self,
+        mut json_iterator: JsonIterator,
         value: UnsafePointer[UInt8],
     ) -> errors.ErrorType:
         return json_iterator.visit_root_primitive(self, value)
 
     fn visit_primitive(
-        inout self,
-        inout json_iterator: JsonIterator,
+        mut self,
+        mut json_iterator: JsonIterator,
         value: UnsafePointer[UInt8],
     ) -> errors.ErrorType:
         return json_iterator.visit_primitive(self, value)
 
-    fn visit_empty_object(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_empty_object(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         return self.empty_container(
             json_iterator, tape_type.START_OBJECT, tape_type.END_OBJECT
         )
 
-    fn visit_empty_array(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_empty_array(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         return self.empty_container(json_iterator, tape_type.START_ARRAY, tape_type.END_ARRAY)
 
-    fn visit_document_start(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_document_start(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         self.start_container(json_iterator)
         return errors.SUCCESS
 
-    fn visit_object_start(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_object_start(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         self.start_container(json_iterator)
         return errors.SUCCESS
 
-    fn visit_array_start(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_array_start(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         self.start_container(json_iterator)
         return errors.SUCCESS
 
-    fn visit_object_end(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_object_end(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         return self.end_container(json_iterator, tape_type.START_OBJECT, tape_type.END_OBJECT)
 
-    fn visit_array_end(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_array_end(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         return self.end_container(json_iterator, tape_type.START_ARRAY, tape_type.END_ARRAY)
 
-    fn visit_document_end(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn visit_document_end(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         start_tape_index = UInt32(0)
         self.tape.append(start_tape_index.cast[DType.uint64](), tape_type.ROOT)
         TapeWriter.write(
@@ -83,16 +83,16 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_key(
-        inout self, json_iterator: JsonIterator, key: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, key: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         return self.visit_string(json_iterator, key)
 
-    fn increment_count(inout self, json_iterator: JsonIterator) -> errors.ErrorType:
+    fn increment_count(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
         json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count += 1
         return errors.SUCCESS
 
     fn visit_string(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         dst = self.on_string_start(json_iterator)
         dst = string_parsing.parse_string(value + 1, dst, False)
@@ -102,17 +102,17 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_root_string(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         return self.visit_string(json_iterator, value)
 
     fn visit_number(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         return number_parsing.parse_number(value, self.tape)
 
     fn visit_root_number(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         # We need to make a copy to make sure that the string is space terminated.
         # This is not about padding the input, which should already padded up
@@ -139,7 +139,7 @@ struct TapeBuilder:
         return self.visit_number(json_iterator, copy.unsafe_ptr())
 
     fn visit_true_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_true_atom(value):
             return errors.T_ATOM_ERROR
@@ -147,7 +147,7 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_root_true_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_true_atom(value, json_iterator.remaining_len()):
             return errors.T_ATOM_ERROR
@@ -155,7 +155,7 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_false_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_false_atom(value):
             return errors.F_ATOM_ERROR
@@ -163,7 +163,7 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_root_false_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_false_atom(value, json_iterator.remaining_len()):
             return errors.F_ATOM_ERROR
@@ -171,7 +171,7 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_null_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_null_atom(value):
             return errors.N_ATOM_ERROR
@@ -179,7 +179,7 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn visit_root_null_atom(
-        inout self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
+        mut self, json_iterator: JsonIterator, value: UnsafePointer[UInt8]
     ) -> errors.ErrorType:
         if atom_parsing.is_valid_null_atom(value, json_iterator.remaining_len()):
             return errors.N_ATOM_ERROR
@@ -191,14 +191,14 @@ struct TapeBuilder:
         return int(self.tape.next_tape_loc) - int(a)
 
     fn empty_container(
-        inout self, json_iterator: JsonIterator, start: TapeType, end: TapeType
+        mut self, json_iterator: JsonIterator, start: TapeType, end: TapeType
     ) -> errors.ErrorType:
         start_index = self.next_tape_index(json_iterator).cast[DType.uint64]()
         self.tape.append(start_index + 2, start)
         self.tape.append(start_index, end)
         return errors.SUCCESS
 
-    fn start_container(inout self, json_iterator: JsonIterator):
+    fn start_container(mut self, json_iterator: JsonIterator):
         json_iterator.dom_parser[].open_containers[
             int(json_iterator.depth)
         ].tape_index = self.next_tape_index(json_iterator)
@@ -206,7 +206,7 @@ struct TapeBuilder:
         self.tape.skip()  # We don't actually *write* the start element until the end.
 
     fn end_container(
-        inout self, json_iterator: JsonIterator, start: TapeType, end: TapeType
+        mut self, json_iterator: JsonIterator, start: TapeType, end: TapeType
     ) -> errors.ErrorType:
         # Write the ending tape element, pointing at the start location
         start_tape_index = (
@@ -226,7 +226,7 @@ struct TapeBuilder:
         )
         return errors.SUCCESS
 
-    fn on_string_start(inout self, json_iterator: JsonIterator) -> UnsafePointer[UInt8]:
+    fn on_string_start(mut self, json_iterator: JsonIterator) -> UnsafePointer[UInt8]:
         self.tape.append(
             int(self.current_string_buffer_loc)
             - int(json_iterator.dom_parser[].document.string_buf.unsafe_ptr()),
@@ -234,7 +234,7 @@ struct TapeBuilder:
         )
         return self.current_string_buffer_loc + sizeof[UInt32]()
 
-    fn onstring_end(inout self, dst: UnsafePointer[UInt8]):
+    fn onstring_end(mut self, dst: UnsafePointer[UInt8]):
         # Should we do -1 to account for null termination? I don't think so.
         str_length = UInt32(int(dst) - int(self.current_string_buffer_loc + sizeof[UInt32]()))
 

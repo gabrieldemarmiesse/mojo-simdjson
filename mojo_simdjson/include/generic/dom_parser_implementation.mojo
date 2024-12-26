@@ -55,19 +55,19 @@ struct DomParserImplementation:
     fn capacity(self) -> Int:
         return self._capacity
 
-    fn stage1(inout self, buffer: String) -> errors.ErrorType:
+    fn stage1(mut self, buffer: String) -> errors.ErrorType:
         return self.stage1(buffer.as_bytes())
 
-    fn stage1(inout self, buffer: StringSlice) -> errors.ErrorType:
+    fn stage1(mut self, buffer: StringSlice) -> errors.ErrorType:
         return self.stage1(buffer.as_bytes())
 
-    fn stage1(inout self, buffer: Span[UInt8]) -> errors.ErrorType:
+    fn stage1(mut self, buffer: Span[UInt8]) -> errors.ErrorType:
         self.allocate(len(buffer))
         self.buf = buffer.unsafe_ptr()
         self.length = len(buffer)
         return JsonStructuralIndexer.index[128](buffer, self)
 
-    fn allocate(inout self, amount: Int):
+    fn allocate(mut self, amount: Int):
         # custom
         self.structural_indexes.reserve(amount)
         self.structural_indexes.resize(amount, 0)

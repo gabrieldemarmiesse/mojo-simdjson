@@ -35,5 +35,5 @@ struct BufferBlockReader[step_size: Int, origin: Origin]:
         )
         return len(self.buffer) - self.idx
 
-    fn advance(inout self):
+    fn advance(mut self):
         self.idx += Self.step_size

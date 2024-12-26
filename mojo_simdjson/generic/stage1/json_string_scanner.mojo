@@ -11,7 +11,7 @@ struct JsonStringBlock:
     var _quote: UInt64
     var _in_string: UInt64
 
-    fn __init__(inout self, escaped: UInt64, quote: UInt64, in_string: UInt64):
+    fn __init__(mut self, escaped: UInt64, quote: UInt64, in_string: UInt64):
         self._escaped = escaped
         self._quote = quote
         self._in_string = in_string
@@ -51,7 +51,7 @@ struct JsonStringScanner:
         self.escape_scanner = JsonEscapeScanner()
         self.prev_in_string = 0
 
-    fn next(inout self, in_: SIMD[DType.uint8, 64]) -> JsonStringBlock:
+    fn next(mut self, in_: SIMD[DType.uint8, 64]) -> JsonStringBlock:
         backslash = eq["\\"](in_)
         escaped = self.escape_scanner.next(backslash).escaped
         quote = eq['"'](in_) & ~escaped

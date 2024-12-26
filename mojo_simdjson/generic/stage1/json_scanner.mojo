@@ -60,7 +60,7 @@ struct JsonScanner:
         self.prev_scalar = 0
         self.string_scanner = JsonStringScanner()
 
-    fn next(inout self, in_: SIMD[DType.uint8, 64]) -> JsonBlock:
+    fn next(mut self, in_: SIMD[DType.uint8, 64]) -> JsonBlock:
         strings = self.string_scanner.next(in_)
         characters = JsonCharacterBlock.classify(in_)
 
@@ -72,7 +72,7 @@ struct JsonScanner:
         return self.string_scanner.finish()
 
 
-fn follows(match_: UInt64, inout overflow: UInt64) -> UInt64:
+fn follows(match_: UInt64, mut overflow: UInt64) -> UInt64:
     result = match_ << 1 | overflow
     overflow = match_ >> 63
     return result
