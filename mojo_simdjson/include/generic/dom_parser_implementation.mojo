@@ -3,7 +3,7 @@ from memory import Span
 from memory import UnsafePointer
 from ...generic.stage1.json_structural_indexer import JsonStructuralIndexer
 from utils import StringSlice
-
+from mojo_simdjson.generic.stage2.tape_builder import TapeBuilder
 
 @value
 struct OpenContainer:
@@ -66,6 +66,16 @@ struct DomParserImplementation:
         self.buf = buffer.unsafe_ptr()
         self.length = len(buffer)
         return JsonStructuralIndexer.index[128](buffer, self)
+
+    fn stage2(mut self) -> errors.ErrorType:
+        # we first should allocate some data for the document, enough
+        # so that we'll never go out of bounds
+        # We need at most two UInt64 per structural character
+        self.document.tape.resize(int(self.n_structural_indexes) * 2, 0)
+        # at most, all the input bytes are in a string, except structurals
+        self.document.string_buf.resize(self.length - int(self.n_structural_indexes), 0)
+        return TapeBuilder.parse_document(self)
+
 
     fn allocate(mut self, amount: Int):
         # custom

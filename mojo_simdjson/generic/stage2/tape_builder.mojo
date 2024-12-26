@@ -25,9 +25,8 @@ struct TapeBuilder:
     # TODO: add streaming
     @staticmethod
     fn parse_document(
-        mut dom_parser: DomParserImplementation, owned document: Document
+        mut dom_parser: DomParserImplementation
     ) -> errors.ErrorType:
-        dom_parser.document = document^
         iter_ = JsonIterator(dom_parser, 0)
         builder = TapeBuilder(dom_parser.document)
         return iter_.walk_document(builder)
