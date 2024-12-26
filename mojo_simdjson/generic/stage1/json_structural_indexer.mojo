@@ -15,7 +15,7 @@ struct Utf8Checker:
     # TODO: Use the stdlib for this.
     pass
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         pass
 
     fn check_next_input(self, in_: SIMD[DType.uint8, 64]):
@@ -31,7 +31,7 @@ struct Utf8Checker:
 struct BitIndexer:
     var tail: UnsafePointer[UInt32]
 
-    fn __init__(out self: Self, structural_indexes: Span[UInt32]):
+    fn __init__(out self, structural_indexes: Span[UInt32]):
         self.tail = structural_indexes.unsafe_ptr()
 
     fn write_index(mut self, idx: UInt32, mut bits: UInt64, i: Int):
@@ -61,7 +61,7 @@ struct JsonStructuralIndexer:
     var prev_structurals: UInt64
     var unescaped_chars_error: UInt64
 
-    fn __init__(out self: Self, structural_indexes: Span[UInt32]):
+    fn __init__(out self, structural_indexes: Span[UInt32]):
         self.scanner = JsonScanner()
         self.checker = Utf8Checker()
         self.indexer = BitIndexer(structural_indexes)
@@ -97,7 +97,7 @@ struct JsonStructuralIndexer:
     fn step[
         step_size: Int
     ](
-        mut self: Self,
+        mut self,
         block: UnsafePointer[UInt8],
         mut reader: BufferBlockReader[step_size],
     ):

@@ -25,7 +25,7 @@ struct DomParserImplementation:
     var _capacity: Int
     var _max_depth: Int
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         self.open_containers = List[OpenContainer]()
         self.is_array = List[Bool]()
         self.buf = UnsafePointer[UInt8]()

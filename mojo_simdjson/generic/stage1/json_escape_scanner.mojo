@@ -12,7 +12,7 @@ struct _EscapedAndEscape:
 struct JsonEscapeScanner:
     var next_is_escaped: UInt64
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         self.next_is_escaped = 0
 
     fn next(mut self, backslash: UInt64) -> _EscapedAndEscape:

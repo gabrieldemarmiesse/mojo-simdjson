@@ -10,7 +10,7 @@ struct JsonBlock:
     var _follows_potential_nonquote_scalar: UInt64
 
     fn __init__(
-        out self: Self,
+        out self,
         owned strings: JsonStringBlock,
         characters: JsonCharacterBlock,
         follows_potential_nonquote_scalar: UInt64,
@@ -56,7 +56,7 @@ struct JsonScanner:
     var prev_scalar: UInt64
     var string_scanner: JsonStringScanner
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         self.prev_scalar = 0
         self.string_scanner = JsonStringScanner()
 

@@ -7,7 +7,7 @@ struct BufferBlockReader[step_size: Int, origin: Origin]:
     var len_minus_step: Int
     var idx: Int
 
-    fn __init__(out self: Self, buffer: Span[UInt8, origin]):
+    fn __init__(out self, buffer: Span[UInt8, origin]):
         self.buffer = buffer
         if len(buffer) < Self.step_size:
             self.len_minus_step = 0

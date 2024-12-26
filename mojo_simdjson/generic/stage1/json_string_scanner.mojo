@@ -47,7 +47,7 @@ struct JsonStringScanner:
     var escape_scanner: JsonEscapeScanner
     var prev_in_string: UInt64
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         self.escape_scanner = JsonEscapeScanner()
         self.prev_in_string = 0
 

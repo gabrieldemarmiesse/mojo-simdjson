@@ -9,11 +9,11 @@ struct Document:
     var tape: List[UInt64]
     var string_buf: List[UInt8]
 
-    fn __init__(out self: Self):
+    fn __init__(out self):
         self.tape = List[UInt64]()
         self.string_buf = List[UInt8]()
 
-    fn __moveinit__(out self: Self, owned other: Self):
+    fn __moveinit__(out self, owned other: Self):
         self.tape = other.tape^
         self.string_buf = other.string_buf^
 
@@ -27,10 +27,10 @@ struct DocumentEntryIterator[document_origin: ImmutableOrigin]:
         self.pointer_to_document = Pointer.address_of(document)
         self.current_index = 0
     
-    fn __has_next__(self: Self) -> Bool:
+    fn __has_next__(self) -> Bool:
         return self.current_index < len(self.pointer_to_document[].tape)
 
-    fn __next__(inout self: Self) -> DocumentEntry[document_origin]:
+    fn __next__(mut self) -> DocumentEntry[document_origin]:
         # first we get the tape type
         entry_type = (self.pointer_to_document[].tape[self.current_index] >> 56).cast[DType.uint8]()
         length_of_container = Optional[UInt32](None)
@@ -81,17 +81,17 @@ struct DocumentEntry[document_origin: ImmutableOrigin]:
     var length_of_container: Optional[UInt32]
     var value: Optional[Variant[Int64, Float64, StringSlice[document_origin]]]
 
-    fn __init__(out self: Self, entry_type: tape_type.TapeType, length_of_container: Optional[UInt32],  value: Variant[Int64, Float64, StringSlice[document_origin]]):
+    fn __init__(out self, entry_type: tape_type.TapeType, length_of_container: Optional[UInt32],  value: Variant[Int64, Float64, StringSlice[document_origin]]):
         self.entry_type = entry_type
         self.length_of_container = length_of_container
         self.value = value
 
-    fn __moveinit__(out self: Self, owned other: Self):
+    fn __moveinit__(out self, owned other: Self):
         self.entry_type = other.entry_type
         self.length_of_container = other.length_of_container
         self.value = other.value^
     
-    fn __copyinit__(out self: Self, other: Self):
+    fn __copyinit__(out self, other: Self):
         self.entry_type = other.entry_type
         self.length_of_container = other.length_of_container
         self.value = other.value
