@@ -35,7 +35,7 @@ struct DomParserImplementation:
         self.structural_indexes = List[UInt32]()
         self.next_structural_index = 0
         self._capacity = 0
-        self._max_depth = 0
+        self._max_depth = 100
 
     fn __moveinit__(out self, owned other: Self):
         self.open_containers = other.open_containers
@@ -74,6 +74,9 @@ struct DomParserImplementation:
         self.document.tape.resize(int(self.n_structural_indexes) * 2, 0)
         # at most, all the input bytes are in a string, except structurals
         self.document.string_buf.resize(self.length - int(self.n_structural_indexes), 0)
+        self.open_containers.resize(self._max_depth, OpenContainer(0, 0))
+        self.is_array.resize(self._max_depth, False)
+        
         return TapeBuilder.parse_document(self)
 
 

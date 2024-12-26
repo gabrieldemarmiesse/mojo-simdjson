@@ -73,6 +73,7 @@ struct JsonStructuralIndexer:
         step_size: Int
     ](buffer: Span[UInt8], mut parser: DomParserImplementation) -> errors.ErrorType:
         if len(buffer) > parser.capacity():
+            print("buffer too big")
             return errors.CAPACITY
 
         if len(buffer) == 0:

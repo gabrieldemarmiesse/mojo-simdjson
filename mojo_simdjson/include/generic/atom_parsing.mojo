@@ -15,7 +15,8 @@ fn str4ncmp[reference: SIMD[DType.uint8, 4]](start_of_4: UnsafePointer[UInt8]) -
     """Returns 0 if the 4 bytes starting at start_of_4 are equal to reference, returns any
     other value otherwise.
     """
-    alias reference_as_uint32 = bitcast[DType.uint32, new_width=1](reference)
+    # This should be an alias, but memory.bitcast doesn't work at compile-time
+    reference_as_uint32 = bitcast[DType.uint32, new_width=1](reference)
     four_bytes_as_uint32 = bitcast[DType.uint32, new_width=1](start_of_4.load[width=4]())
     return four_bytes_as_uint32 ^ reference_as_uint32
 

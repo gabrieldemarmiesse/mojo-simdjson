@@ -198,9 +198,10 @@ struct TapeBuilder:
         return errors.SUCCESS
 
     fn start_container(mut self, json_iterator: JsonIterator):
+        aaaaa = self.next_tape_index(json_iterator)
         json_iterator.dom_parser[].open_containers[
             int(json_iterator.depth)
-        ].tape_index = self.next_tape_index(json_iterator)
+        ].tape_index = aaaaa
         json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count = 0
         self.tape.skip()  # We don't actually *write* the start element until the end.
 
@@ -216,6 +217,7 @@ struct TapeBuilder:
         # The C++ version will just saturate in this case.
         count = json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count
         if count > 0xFFFFFF:
+            print("container too big")
             return errors.CAPACITY  # TODO: Add a custom error
         TapeWriter.write(
             json_iterator.dom_parser[].document.tape.unsafe_ptr() + int(start_tape_index),

@@ -293,6 +293,7 @@ struct JsonIterator:
         elif value == ord("-") or (UInt8(ord("0")) <= value <= UInt8(ord("9"))):
             return visitor.visit_root_number(self, pointer)
         else:
+            _ = value
             return errors.TAPE_ERROR
 
     fn visit_primitive(

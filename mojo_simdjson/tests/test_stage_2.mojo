@@ -26,9 +26,10 @@ def check_stage2(json_file: String):
     parser = DomParserImplementation()
     error_code = parser.stage1(json_input)
     assert_equal(error_code, 0, "unexpected error code for stage 1")
+    print("stage 1 done")
     error_code = parser.stage2()
     assert_equal(error_code, 0, "unexpected error code for stage 2")
-
+    print("stage 2 done")
 
 
 def test_simples_json():
