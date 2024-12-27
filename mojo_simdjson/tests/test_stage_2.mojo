@@ -30,6 +30,7 @@ def check_stage2(json_file: String):
     error_code = parser.stage2()
     assert_equal(error_code, 0, "unexpected error code for stage 2")
     print("stage 2 done")
+    _ = json_input
 
 
 def test_simples_json():

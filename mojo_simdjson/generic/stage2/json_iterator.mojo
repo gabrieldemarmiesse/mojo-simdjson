@@ -3,6 +3,7 @@ from ...include.generic.dom_parser_implementation import DomParserImplementation
 from mojo_simdjson.errors import ErrorType
 from .tape_builder import TapeBuilder
 from sys.intrinsics import likely, unlikely
+import sys
 
 
 struct WalkState:
@@ -239,7 +240,7 @@ struct JsonIterator:
                 self.dom_parser[].next_structural_index = UInt32(
                     int(self.next_structural)
                     - int(self.dom_parser[].structural_indexes.unsafe_ptr())
-                )
+                ) // sys.sizeof[UInt32]()
                 if (
                     self.dom_parser[].next_structural_index
                     != self.dom_parser[].n_structural_indexes
