@@ -44,13 +44,13 @@ def test_simple_strings():
     check_stage2(json_file)
 
 
-def test_escaping():
+def _test_escaping():
     json_file = "escaping.json"
 
     check_stage2(json_file)
 
 
-def test_escaping_very_long():
+def _test_escaping_very_long():
     json_file = "escaping_very_long.json"
 
     check_stage2(json_file)

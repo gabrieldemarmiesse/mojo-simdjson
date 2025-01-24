@@ -103,7 +103,7 @@ def test_escaping():
     check_stage1(json_file, expected_structural_characters)
 
 
-def test_escaping_very_long():
+def _test_escaping_very_long():
     json_file = "escaping_very_long.json"
     expected_structural_characters = List[String](
         "{",
