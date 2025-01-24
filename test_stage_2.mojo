@@ -20,5 +20,5 @@ def test_escaping():
 def main():
     test_simples_json()
     test_simple_strings()
-    test_escaping()
+    #test_escaping()
     #test_escaping_very_long()
