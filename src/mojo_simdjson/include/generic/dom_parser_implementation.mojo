@@ -5,6 +5,7 @@ from ...generic.stage1.json_structural_indexer import JsonStructuralIndexer
 from utils import StringSlice
 from mojo_simdjson.generic.stage2.tape_builder import TapeBuilder
 
+
 @value
 struct OpenContainer:
     var tape_index: UInt32
@@ -73,12 +74,13 @@ struct DomParserImplementation:
         # We need at most two UInt64 per structural character
         self.document.tape.resize(Int(self.n_structural_indexes) * 2, 0)
         # at most, all the input bytes are in a string, except structurals
-        self.document.string_buf.resize(self.length - Int(self.n_structural_indexes), 0)
+        self.document.string_buf.resize(
+            self.length - Int(self.n_structural_indexes), 0
+        )
         self.open_containers.resize(self._max_depth, OpenContainer(0, 0))
         self.is_array.resize(self._max_depth, False)
-        
-        return TapeBuilder.parse_document(self)
 
+        return TapeBuilder.parse_document(self)
 
     fn allocate(mut self, amount: Int):
         # custom

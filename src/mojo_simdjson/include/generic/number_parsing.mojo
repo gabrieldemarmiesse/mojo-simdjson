@@ -19,7 +19,9 @@ fn is_digit(c: UInt8) -> Bool:
     return UInt8(ord("0")) <= c <= UInt8(ord("9"))
 
 
-fn parse_number(src: UnsafePointer[UInt8], mut writer: TapeWriter) -> errors.ErrorType:
+fn parse_number(
+    src: UnsafePointer[UInt8], mut writer: TapeWriter
+) -> errors.ErrorType:
     # This function has significant changes compared to
     # the original version in simdjson. The original version
     # has custom code for parsing numbers, notably because

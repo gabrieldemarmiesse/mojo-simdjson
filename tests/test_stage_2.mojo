@@ -7,7 +7,11 @@ from mojo_simdjson import errors
 from os.path import dirname
 from testing import assert_equal
 from memory import Span
-from mojo_simdjson.include.dom.document import DocumentEntryIterator, Document, DocumentEntry
+from mojo_simdjson.include.dom.document import (
+    DocumentEntryIterator,
+    Document,
+    DocumentEntry,
+)
 
 
 @always_inline
@@ -44,7 +48,7 @@ def test_simple_strings():
     check_stage2(json_file)
 
 
-def _test_escaping():
+def test_escaping():
     json_file = "escaping.json"
 
     check_stage2(json_file)

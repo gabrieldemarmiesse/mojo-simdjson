@@ -36,7 +36,9 @@ struct BitIndexer:
 
     fn write_index(mut self, idx: UInt32, mut bits: UInt64, i: Int):
         # could reverse bit here if faster on some platforms
-        (self.tail + i)[] = idx + bit.count_trailing_zeros(bits).cast[DType.uint32]()
+        (self.tail + i)[] = (
+            idx + bit.count_trailing_zeros(bits).cast[DType.uint32]()
+        )
         bits = bits & (bits - 1)  # TODO: use blsr
 
     fn write(mut self, idx: UInt32, owned bits: UInt64):
@@ -71,7 +73,9 @@ struct JsonStructuralIndexer:
     @staticmethod
     fn index[
         step_size: Int
-    ](buffer: Span[UInt8], mut parser: DomParserImplementation) -> errors.ErrorType:
+    ](
+        buffer: Span[UInt8], mut parser: DomParserImplementation
+    ) -> errors.ErrorType:
         if len(buffer) > parser.capacity():
             print("buffer too big")
             return errors.CAPACITY
@@ -119,9 +123,13 @@ struct JsonStructuralIndexer:
 
         self.checker.check_next_input(in_)
         self.indexer.write(UInt32(index - 64), self.prev_structurals)
-        bin_display_reverse(self.prev_structurals, "prev_structurals, structural_start")
+        bin_display_reverse(
+            self.prev_structurals, "prev_structurals, structural_start"
+        )
         self.prev_structurals = json_block.structural_start()
-        self.unescaped_chars_error |= json_block.non_quote_inside_string(unescaped)
+        self.unescaped_chars_error |= json_block.non_quote_inside_string(
+            unescaped
+        )
 
     fn finish(
         mut self, mut parser: DomParserImplementation, idx: Int, length: Int
@@ -136,21 +144,30 @@ struct JsonStructuralIndexer:
         if self.unescaped_chars_error:
             return errors.UNESCAPED_CHARS
 
-        pointer_to_start = UnsafePointer.address_of(parser.structural_indexes[0])
-        parser.n_structural_indexes = (Int(self.indexer.tail) - Int(pointer_to_start)) // 4
+        pointer_to_start = UnsafePointer.address_of(
+            parser.structural_indexes[0]
+        )
+        parser.n_structural_indexes = (
+            Int(self.indexer.tail) - Int(pointer_to_start)
+        ) // 4
         print("n_structural_indexes, in func", parser.n_structural_indexes)
 
         parser.structural_indexes[Int(parser.n_structural_indexes)] = UInt32(
             length
         )  # used later in partial == stage1_mode::streaming_final
-        parser.structural_indexes[Int(parser.n_structural_indexes + 1)] = UInt32(length)
+        parser.structural_indexes[
+            Int(parser.n_structural_indexes + 1)
+        ] = UInt32(length)
         parser.structural_indexes[Int(parser.n_structural_indexes + 2)] = 0
         parser.next_structural_index = 0
 
         if parser.n_structural_indexes == 0:
             return errors.EMPTY
 
-        if parser.structural_indexes[Int(parser.n_structural_indexes - 1)] > length:
+        if (
+            parser.structural_indexes[Int(parser.n_structural_indexes - 1)]
+            > length
+        ):
             return errors.UNEXPECTED_ERROR
 
         self.checker.check_eof()

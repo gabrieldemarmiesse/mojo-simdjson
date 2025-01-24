@@ -7,15 +7,16 @@ import sys
 
 
 struct WalkState:
-    alias document_start = 0
-    alias object_begin = 1
-    alias object_field = 2
-    alias object_continue = 3
-    alias scope_end = 4
-    alias array_begin = 5
-    alias array_value = 6
-    alias array_continue = 7
-    alias document_end = 8
+    # TODO: replace by digits
+    alias document_start = "document_start"
+    alias object_begin = "object_begin"
+    alias object_field = "object_field"
+    alias object_continue = "object_continue"
+    alias scope_end = "scope_end"
+    alias array_begin = "array_begin"
+    alias array_value = "array_value"
+    alias array_continue = "array_continue"
+    alias document_end = "document_end"
 
 
 struct JsonIterator:
@@ -40,6 +41,7 @@ struct JsonIterator:
         walk_state = WalkState.document_start
 
         while True:
+            print("walk_state: ", walk_state)
             if walk_state == WalkState.document_start:
                 if self.at_eof():
                     return errors.EMPTY
@@ -211,6 +213,7 @@ struct JsonIterator:
                 else:
                     error_code = self.visit_primitive(visitor, value)
                     if error_code != errors.SUCCESS:
+                        print("error_code: ", error_code)
                         return error_code
                 walk_state = WalkState.array_continue
                 continue
@@ -237,10 +240,13 @@ struct JsonIterator:
                 error_code = visitor.visit_document_end(self)
                 if error_code != errors.SUCCESS:
                     return error_code
-                self.dom_parser[].next_structural_index = UInt32(
-                    Int(self.next_structural)
-                    - Int(self.dom_parser[].structural_indexes.unsafe_ptr())
-                ) // sys.sizeof[UInt32]()
+                self.dom_parser[].next_structural_index = (
+                    UInt32(
+                        Int(self.next_structural)
+                        - Int(self.dom_parser[].structural_indexes.unsafe_ptr())
+                    )
+                    // sys.sizeof[UInt32]()
+                )
                 if (
                     self.dom_parser[].next_structural_index
                     != self.dom_parser[].n_structural_indexes
@@ -262,12 +268,17 @@ struct JsonIterator:
 
     # not 100% sure about this one
     fn at_eof(self) -> Bool:
-        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr() + Int(
-            self.dom_parser[].n_structural_indexes
+        return (
+            self.next_structural
+            == self.dom_parser[].structural_indexes.unsafe_ptr()
+            + Int(self.dom_parser[].n_structural_indexes)
         )
 
     fn at_beginning(self) -> Bool:
-        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr()
+        return (
+            self.next_structural
+            == self.dom_parser[].structural_indexes.unsafe_ptr()
+        )
 
     fn last_structural(self) -> UInt8:
         return self.buffer[

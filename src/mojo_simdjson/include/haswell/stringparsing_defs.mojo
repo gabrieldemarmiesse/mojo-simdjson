@@ -32,12 +32,17 @@ struct BackslashAndQuote:
         # SIMDJSON_PADDING of padding
         constrained[
             SIMDJSON_PADDING >= (Self.BYTES_PROCESSED - 1),
-            "Backslash and quote finder must process fewer than SIMDJSON_PADDING bytes",
+            (
+                "Backslash and quote finder must process fewer than"
+                " SIMDJSON_PADDING bytes"
+            ),
         ]()
         v = src.load[width=8]()
         # store to dest unconditionally - we can overwrite the bits we don't like later
         dst.store(v)
         return BackslashAndQuote(
-            backslash_bits=pack_bits(v == UInt8(ord("\\"))).cast[DType.uint32](),
+            backslash_bits=pack_bits(v == UInt8(ord("\\"))).cast[
+                DType.uint32
+            ](),
             quote_bits=pack_bits(v == UInt8(ord('"'))).cast[DType.uint32](),
         )

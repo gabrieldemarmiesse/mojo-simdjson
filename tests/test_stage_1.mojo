@@ -52,14 +52,18 @@ def verify_expected_structural_characters(
     )
 
 
-def check_stage1(json_file: String, expected_structural_characters: List[String]):
+def check_stage1(
+    json_file: String, expected_structural_characters: List[String]
+):
     json_input = (get_jsons_directory() / json_file).read_text()
     print(json_input.replace("\n", "_"))
     parser = DomParserImplementation()
     error_code = parser.stage1(json_input)
     assert_equal(error_code, 0, "unexpected error code")
 
-    verify_expected_structural_characters(parser, expected_structural_characters, json_input)
+    verify_expected_structural_characters(
+        parser, expected_structural_characters, json_input
+    )
 
 
 def test_simples_json():

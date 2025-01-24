@@ -17,7 +17,9 @@ struct JsonBlock:
     ):
         self._string = strings^
         self._characters = characters
-        self._follows_potential_nonquote_scalar = follows_potential_nonquote_scalar
+        self._follows_potential_nonquote_scalar = (
+            follows_potential_nonquote_scalar
+        )
 
     @always_inline
     fn structural_start(self) -> UInt64:

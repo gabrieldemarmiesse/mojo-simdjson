@@ -373,7 +373,9 @@ fn parse_string(
                 # seen. I think this is ok
                 escape_result = escape_map[Int(escape_char)]
                 if escape_result == 0:
-                    return UnsafePointer[UInt8]()  # bogus escape value is an error
+                    return UnsafePointer[
+                        UInt8
+                    ]()  # bogus escape value is an error
                 dst[backslash_dist] = escape_result
                 src += backslash_dist + 2
                 dst += backslash_dist + 1
