@@ -19,10 +19,10 @@ struct BackslashAndQuote:
         return (self.quote_bits - 1) & self.backslash_bits != 0
 
     fn quote_index(self) -> Int:
-        return int(count_trailing_zeros(self.quote_bits))
+        return Int(count_trailing_zeros(self.quote_bits))
 
     fn backslash_index(self) -> Int:
-        return int(count_trailing_zeros(self.backslash_bits))
+        return Int(count_trailing_zeros(self.backslash_bits))
 
     @staticmethod
     fn copy_and_find(

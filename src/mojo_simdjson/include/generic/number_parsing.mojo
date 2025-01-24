@@ -38,7 +38,7 @@ fn parse_number(src: UnsafePointer[UInt8], mut writer: TapeWriter) -> errors.Err
 
     # check for minus sign
     has_minus_sign = src[0] == ord_minus_sign
-    p = src + int(has_minus_sign)
+    p = src + Int(has_minus_sign)
 
     while is_digit(p[0]):
         p += 1
@@ -56,20 +56,20 @@ fn parse_number(src: UnsafePointer[UInt8], mut writer: TapeWriter) -> errors.Err
     else:
         is_float = False
 
-    length = int(p) - int(src)
+    length = Int(p) - Int(src)
     # can we avoid going through span?
     span = Span(src, length)
     string_slice = StringSlice(unsafe_from_utf8=span)
     if is_float:
         try:
-            number_as_float = float(string_slice)
+            number_as_float = Float64(string_slice)
         except ValueError:
             return errors.NUMBER_ERROR
         else:
             writer.append_double(number_as_float)
     else:
         try:
-            number_as_int = int(string_slice)
+            number_as_int = Int(string_slice)
         except ValueError:
             return errors.NUMBER_ERROR
         else:

@@ -371,7 +371,7 @@ fn parse_string(
                 # write bs_dist+1 characters to output
                 # note this may reach beyond the part of the buffer we've actually
                 # seen. I think this is ok
-                escape_result = escape_map[int(escape_char)]
+                escape_result = escape_map[Int(escape_char)]
                 if escape_result == 0:
                     return UnsafePointer[UInt8]()  # bogus escape value is an error
                 dst[backslash_dist] = escape_result

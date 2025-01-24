@@ -42,7 +42,7 @@ struct DocumentEntryIterator[document_origin: ImmutableOrigin]:
             length_of_container = ((self.pointer_to_document[].tape[self.current_index] >> 32) & ((1 << 24) - 1)).cast[DType.uint32]()
         elif entry_type == tape_type.STRING:
             # the string data is stored in the next 56 bits
-            index_of_string_data = int(self.pointer_to_document[].tape[self.current_index].cast[DType.uint32]() & ((1 << 56) - 1))
+            index_of_string_data = Int(self.pointer_to_document[].tape[self.current_index].cast[DType.uint32]() & ((1 << 56) - 1))
             pointer_to_string_data = UnsafePointer.address_of(self.pointer_to_document[].string_buf[index_of_string_data])
             # We want to avoid unaligned memory load of UInt32
             var string_size: UInt32 = 0

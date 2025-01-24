@@ -71,9 +71,9 @@ struct DomParserImplementation:
         # we first should allocate some data for the document, enough
         # so that we'll never go out of bounds
         # We need at most two UInt64 per structural character
-        self.document.tape.resize(int(self.n_structural_indexes) * 2, 0)
+        self.document.tape.resize(Int(self.n_structural_indexes) * 2, 0)
         # at most, all the input bytes are in a string, except structurals
-        self.document.string_buf.resize(self.length - int(self.n_structural_indexes), 0)
+        self.document.string_buf.resize(self.length - Int(self.n_structural_indexes), 0)
         self.open_containers.resize(self._max_depth, OpenContainer(0, 0))
         self.is_array.resize(self._max_depth, False)
         

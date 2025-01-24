@@ -32,22 +32,22 @@ def verify_expected_structural_characters(
 
     for i in range(len(expected_structural_characters)):
         assert_equal(
-            json_input[int(parser.structural_indexes[i])],
+            json_input[Int(parser.structural_indexes[i])],
             expected_structural_characters[i],
-            "errror at index: " + str(i),
+            "errror at index: " + String(i),
         )
 
     # 3 are leftover
     assert_equal(
-        parser.structural_indexes[int(parser.n_structural_indexes)],
+        parser.structural_indexes[Int(parser.n_structural_indexes)],
         UInt32(len(json_input)),
     )
     assert_equal(
-        parser.structural_indexes[int(parser.n_structural_indexes) + 1],
+        parser.structural_indexes[Int(parser.n_structural_indexes) + 1],
         UInt32(len(json_input)),
     )
     assert_equal(
-        parser.structural_indexes[int(parser.n_structural_indexes) + 2],
+        parser.structural_indexes[Int(parser.n_structural_indexes) + 2],
         UInt32(0),
     )
 

@@ -85,7 +85,7 @@ struct JsonIterator:
                 self.depth += 1
                 if self.depth > self.dom_parser[].max_depth():
                     return errors.DEPTH_ERROR
-                self.dom_parser[].is_array[int(self.depth)] = False
+                self.dom_parser[].is_array[Int(self.depth)] = False
                 error_code = visitor.visit_object_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
@@ -164,7 +164,7 @@ struct JsonIterator:
                 if self.depth == 0:
                     walk_state = WalkState.document_end
                     continue
-                if self.dom_parser[].is_array[int(self.depth)]:
+                if self.dom_parser[].is_array[Int(self.depth)]:
                     walk_state = WalkState.array_continue
                     continue
                 walk_state = WalkState.object_continue
@@ -175,7 +175,7 @@ struct JsonIterator:
                 if self.depth >= self.dom_parser[].max_depth():
                     # Exceeded max depth
                     return errors.DEPTH_ERROR
-                self.dom_parser[].is_array[int(self.depth)] = True
+                self.dom_parser[].is_array[Int(self.depth)] = True
                 error_code = visitor.visit_array_start(self)
                 if error_code != errors.SUCCESS:
                     return error_code
@@ -238,8 +238,8 @@ struct JsonIterator:
                 if error_code != errors.SUCCESS:
                     return error_code
                 self.dom_parser[].next_structural_index = UInt32(
-                    int(self.next_structural)
-                    - int(self.dom_parser[].structural_indexes.unsafe_ptr())
+                    Int(self.next_structural)
+                    - Int(self.dom_parser[].structural_indexes.unsafe_ptr())
                 ) // sys.sizeof[UInt32]()
                 if (
                     self.dom_parser[].next_structural_index
@@ -258,11 +258,11 @@ struct JsonIterator:
         return pointer_to_current
 
     fn remaining_len(self) -> Int:
-        return int(self.dom_parser[].length - (self.next_structural - 1)[])
+        return Int(self.dom_parser[].length - (self.next_structural - 1)[])
 
     # not 100% sure about this one
     fn at_eof(self) -> Bool:
-        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr() + int(
+        return self.next_structural == self.dom_parser[].structural_indexes.unsafe_ptr() + Int(
             self.dom_parser[].n_structural_indexes
         )
 
@@ -271,9 +271,9 @@ struct JsonIterator:
 
     fn last_structural(self) -> UInt8:
         return self.buffer[
-            int(
+            Int(
                 self.dom_parser[].structural_indexes[
-                    int(self.dom_parser[].n_structural_indexes - 1)
+                    Int(self.dom_parser[].n_structural_indexes - 1)
                 ]
             )
         ]

@@ -87,7 +87,7 @@ struct TapeBuilder:
         return self.visit_string(json_iterator, key)
 
     fn increment_count(mut self, json_iterator: JsonIterator) -> errors.ErrorType:
-        json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count += 1
+        json_iterator.dom_parser[].open_containers[Int(json_iterator.depth)].count += 1
         return errors.SUCCESS
 
     fn visit_string(
@@ -187,7 +187,7 @@ struct TapeBuilder:
 
     fn next_tape_index(self, json_iterator: JsonIterator) -> UInt32:
         a = json_iterator.dom_parser[].document.tape.unsafe_ptr()
-        return int(self.tape.next_tape_loc) - int(a)
+        return Int(self.tape.next_tape_loc) - Int(a)
 
     fn empty_container(
         mut self, json_iterator: JsonIterator, start: TapeType, end: TapeType
@@ -200,9 +200,9 @@ struct TapeBuilder:
     fn start_container(mut self, json_iterator: JsonIterator):
         aaaaa = self.next_tape_index(json_iterator)
         json_iterator.dom_parser[].open_containers[
-            int(json_iterator.depth)
+            Int(json_iterator.depth)
         ].tape_index = aaaaa
-        json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count = 0
+        json_iterator.dom_parser[].open_containers[Int(json_iterator.depth)].count = 0
         self.tape.skip()  # We don't actually *write* the start element until the end.
 
     fn end_container(
@@ -210,17 +210,17 @@ struct TapeBuilder:
     ) -> errors.ErrorType:
         # Write the ending tape element, pointing at the start location
         start_tape_index = (
-            json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].tape_index
+            json_iterator.dom_parser[].open_containers[Int(json_iterator.depth)].tape_index
         )
         # Write the start tape element, pointing at the end location (and including count)
         # Note that we differ here from the C++ version, if it exeeds 24 bits we throw an error.
         # The C++ version will just saturate in this case.
-        count = json_iterator.dom_parser[].open_containers[int(json_iterator.depth)].count
+        count = json_iterator.dom_parser[].open_containers[Int(json_iterator.depth)].count
         if count > 0xFFFFFF:
             print("container too big")
             return errors.CAPACITY  # TODO: Add a custom error
         TapeWriter.write(
-            json_iterator.dom_parser[].document.tape.unsafe_ptr() + int(start_tape_index),
+            json_iterator.dom_parser[].document.tape.unsafe_ptr() + Int(start_tape_index),
             self.next_tape_index(json_iterator).cast[DType.uint64]()
             | count.cast[DType.uint64]() << 32,
             start,
@@ -229,15 +229,15 @@ struct TapeBuilder:
 
     fn on_string_start(mut self, json_iterator: JsonIterator) -> UnsafePointer[UInt8]:
         self.tape.append(
-            int(self.current_string_buffer_loc)
-            - int(json_iterator.dom_parser[].document.string_buf.unsafe_ptr()),
+            Int(self.current_string_buffer_loc)
+            - Int(json_iterator.dom_parser[].document.string_buf.unsafe_ptr()),
             tape_type.STRING,
         )
         return self.current_string_buffer_loc + sizeof[UInt32]()
 
     fn onstring_end(mut self, dst: UnsafePointer[UInt8]):
         # Should we do -1 to account for null termination? I don't think so.
-        str_length = UInt32(int(dst) - int(self.current_string_buffer_loc + sizeof[UInt32]()))
+        str_length = UInt32(Int(dst) - Int(self.current_string_buffer_loc + sizeof[UInt32]()))
 
         memcpy(
             dest=self.current_string_buffer_loc,
