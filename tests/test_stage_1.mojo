@@ -21,7 +21,9 @@ fn get_jsons_directory() -> Path:
 
 
 def assert_strictly_increasing(array: List[UInt32], length: UInt32):
+    print("length", length)
     for i in range(1, length):
+        print("test", i)
         assert_true(array[i - 1] < array[i])
 
 
@@ -45,9 +47,10 @@ def verify_expected_structural_characters(
     expected_structural_characters: String,
     json_input: String,
 ):
+    print("n_structural_indexes", parser.n_structural_indexes)
     assert_tagging_is_correct(json_input, expected_structural_characters)
     assert_strictly_increasing(
-        parser.structural_indexes, parser.n_structural_indexes - 3
+        parser.structural_indexes, parser.n_structural_indexes
     )
     detected_structural_characters = String(
         " " * len(expected_structural_characters)
@@ -113,11 +116,11 @@ def test_detect_incorrect_result():
 
 def test_simple_json():
     valid_jsons_directory = get_jsons_directory() / "valid"
+    all_files = valid_jsons_directory.listdir()
+    assert_true(len(all_files) > 5)
     for entry in valid_jsons_directory.listdir():
-        if entry[].is_file():
-            if (
-                entry[]
-                == valid_jsons_directory / "escaping_very_long.json"
-            ):
+        actual_file = valid_jsons_directory / entry[]
+        if actual_file.is_file():
+            if entry[] == "escaping_very_long.json":
                 continue
-            check_stage1(entry[])
+            check_stage1(actual_file)
