@@ -33,7 +33,11 @@ def assert_tagging_is_correct(
         if expected_structural_characters[i] != "1":
             continue
         if not json_input[i] in '{}[]:,tfn-0123456789"':
-            raise Error("Wrong tagging of characters, " + json_input[i] + " is not a structural character")
+            raise Error(
+                "Wrong tagging of characters, "
+                + json_input[i]
+                + " is not a structural character"
+            )
 
 
 def verify_expected_structural_characters(
@@ -41,14 +45,17 @@ def verify_expected_structural_characters(
     expected_structural_characters: String,
     json_input: String,
 ):
-
     assert_tagging_is_correct(json_input, expected_structural_characters)
     assert_strictly_increasing(
-        parser.structural_indexes, parser.n_structural_indexes-3
+        parser.structural_indexes, parser.n_structural_indexes - 3
     )
-    detected_structural_characters = String(" " * len(expected_structural_characters))
+    detected_structural_characters = String(
+        " " * len(expected_structural_characters)
+    )
     for i in range(parser.n_structural_indexes):
-        detected_structural_characters._buffer[Int(parser.structural_indexes[i])] = ord("1")
+        detected_structural_characters._buffer[
+            Int(parser.structural_indexes[i])
+        ] = ord("1")
 
     if detected_structural_characters != expected_structural_characters:
         print("Error in the detected structural characters")
@@ -75,9 +82,7 @@ def verify_expected_structural_characters(
     )
 
 
-def check_stage1(
-    json_file: String
-):
+def check_stage1(json_file: String):
     json_input_with_expected = (get_jsons_directory() / json_file).read_text()
     a = json_input_with_expected.splitlines()
     json_input = a[0]
@@ -100,29 +105,32 @@ def test_wrong_tagging():
 
 def test_detect_incorrect_result():
     json_file = "detect_incorrect_result.json"
-    with assert_raises(contains="Detected and expected structural characters do not match"):
+    with assert_raises(
+        contains="Detected and expected structural characters do not match"
+    ):
         check_stage1(json_file)
 
 
 def test_simple_json():
     json_file = "simple_json.json"
+    check_stage1(json_file)
 
+
+def test_simple_floats():
+    json_file = "simple_floats.json"
     check_stage1(json_file)
 
 
 def test_simple_strings():
     json_file = "simple_strings.json"
-
     check_stage1(json_file)
 
 
 def test_escaping():
     json_file = "escaping.json"
-
     check_stage1(json_file)
 
 
 def _test_escaping_very_long():
     json_file = "escaping_very_long.json"
-
     check_stage1(json_file)
