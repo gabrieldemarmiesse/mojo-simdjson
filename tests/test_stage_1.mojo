@@ -82,8 +82,8 @@ def verify_expected_structural_characters(
     )
 
 
-def check_stage1(json_file: String):
-    json_input_with_expected = (get_jsons_directory() / json_file).read_text()
+def check_stage1(json_file: Path):
+    json_input_with_expected = json_file.read_text()
     a = json_input_with_expected.splitlines()
     json_input = a[0]
     expected_structural_characters = a[1]
@@ -100,7 +100,7 @@ def check_stage1(json_file: String):
 def test_wrong_tagging():
     json_file = "wrong_tagging.json"
     with assert_raises(contains="l is not a structural character"):
-        check_stage1(json_file)
+        check_stage1(get_jsons_directory() / json_file)
 
 
 def test_detect_incorrect_result():
@@ -108,29 +108,16 @@ def test_detect_incorrect_result():
     with assert_raises(
         contains="Detected and expected structural characters do not match"
     ):
-        check_stage1(json_file)
+        check_stage1(get_jsons_directory() / json_file)
 
 
 def test_simple_json():
-    json_file = "simple_json.json"
-    check_stage1(json_file)
-
-
-def test_simple_floats():
-    json_file = "simple_floats.json"
-    check_stage1(json_file)
-
-
-def test_simple_strings():
-    json_file = "simple_strings.json"
-    check_stage1(json_file)
-
-
-def test_escaping():
-    json_file = "escaping.json"
-    check_stage1(json_file)
-
-
-def _test_escaping_very_long():
-    json_file = "escaping_very_long.json"
-    check_stage1(json_file)
+    valid_jsons_directory = get_jsons_directory() / "valid"
+    for entry in valid_jsons_directory.listdir():
+        if entry[].is_file():
+            if (
+                entry[]
+                == valid_jsons_directory / "escaping_very_long.json"
+            ):
+                continue
+            check_stage1(entry[])

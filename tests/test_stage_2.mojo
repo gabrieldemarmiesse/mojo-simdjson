@@ -25,7 +25,7 @@ fn get_jsons_directory() -> Path:
 
 
 def check_stage2(json_file: String):
-    json_input = (get_jsons_directory() / json_file).read_text()
+    json_input = (get_jsons_directory() / "valid" / json_file).read_text()
     json_input = json_input.splitlines()[0]
     print(json_input)
     parser = DomParserImplementation()
