@@ -26,7 +26,8 @@ fn get_jsons_directory() -> Path:
 
 def check_stage2(json_file: String):
     json_input = (get_jsons_directory() / json_file).read_text()
-    print(json_input.replace("\n", "_"))
+    json_input = json_input.splitlines()[0]
+    print(json_input)
     parser = DomParserImplementation()
     error_code = parser.stage1(json_input)
     assert_equal(error_code, 0, "unexpected error code for stage 1")
@@ -37,8 +38,8 @@ def check_stage2(json_file: String):
     _ = json_input
 
 
-def test_simples_json():
-    json_file = "simplest.json"
+def test_simple_json():
+    json_file = "simple_json.json"
     check_stage2(json_file)
 
 
