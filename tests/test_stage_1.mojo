@@ -47,9 +47,10 @@ def verify_expected_structural_characters(
     expected_structural_characters: String,
     json_input: String,
 ):
+    print("n_structural_indexes", parser.n_structural_indexes)
     assert_tagging_is_correct(json_input, expected_structural_characters)
     assert_strictly_increasing(
-        parser.structural_indexes, parser.n_structural_indexes - 3
+        parser.structural_indexes, parser.n_structural_indexes
     )
     detected_structural_characters = String(
         " " * len(expected_structural_characters)
