@@ -21,7 +21,9 @@ fn get_jsons_directory() -> Path:
 
 
 def assert_strictly_increasing(array: List[UInt32], length: UInt32):
+    print("length", length)
     for i in range(1, length):
+        print("test", i)
         assert_true(array[i - 1] < array[i])
 
 
@@ -113,11 +115,15 @@ def test_detect_incorrect_result():
 
 def test_simple_json():
     valid_jsons_directory = get_jsons_directory() / "valid"
+    all_files = valid_jsons_directory.listdir()
+    assert_true(len(all_files) > 5)
     for entry in valid_jsons_directory.listdir():
-        if entry[].is_file():
+        actual_file = valid_jsons_directory / entry[]
+        if actual_file.is_file():
             if (
                 entry[]
-                == valid_jsons_directory / "escaping_very_long.json"
+                == "escaping_very_long.json"
             ):
                 continue
-            check_stage1(entry[])
+            check_stage1(actual_file)
+
