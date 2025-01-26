@@ -83,6 +83,7 @@ def verify_expected_structural_characters(
 
 
 def check_stage1(json_file: Path):
+    print("testing", json_file)
     json_input_with_expected = json_file.read_text()
     a = json_input_with_expected.splitlines()
     json_input = a[0]
