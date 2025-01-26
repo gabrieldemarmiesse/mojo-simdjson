@@ -5,10 +5,9 @@ from mojo_simdjson.include.generic.dom_parser_implementation import (
 )
 from mojo_simdjson import errors
 from os.path import dirname
-from testing import assert_equal
+from testing import assert_equal, assert_true
 from memory import Span
 from mojo_simdjson.include.dom.document import (
-    DocumentEntryIterator,
     Document,
     DocumentEntry,
 )
@@ -35,6 +34,10 @@ def check_stage2(json_file: String):
     error_code = parser.stage2()
     assert_equal(error_code, 0, "unexpected error code for stage 2")
     print("stage 2 done")
+    tup = parser.document.dump_raw_tape()
+    raw_tape = tup[0]
+    assert_true(tup[1], "dump_raw_tape failed")
+
     _ = json_input
 
 

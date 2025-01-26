@@ -121,6 +121,6 @@ def test_simple_json():
     for entry in valid_jsons_directory.listdir():
         actual_file = valid_jsons_directory / entry[]
         if actual_file.is_file():
-            #if entry[] == "escaping_very_long.json":
+            # if entry[] == "escaping_very_long.json":
             #    continue
             check_stage1(actual_file)

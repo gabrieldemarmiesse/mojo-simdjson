@@ -113,7 +113,7 @@ struct JsonStructuralIndexer:
         block: UnsafePointer[UInt8],
         mut reader: BufferBlockReader[step_size],
     ):
-        #@parameter
+        # @parameter
         for start in range(0, step_size, 64):
             in_ = (block + start).load[width=64]()
             print("-" * 64)
@@ -134,9 +134,7 @@ struct JsonStructuralIndexer:
         self.indexer.write(UInt32(index - 64), self.prev_structurals)
 
         self.prev_structurals = json_block.structural_start()
-        bin_display_reverse(
-            self.prev_structurals, "structural_start"
-        )
+        bin_display_reverse(self.prev_structurals, "structural_start")
         self.unescaped_chars_error |= json_block.non_quote_inside_string(
             unescaped
         )

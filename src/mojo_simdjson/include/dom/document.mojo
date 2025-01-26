@@ -4,6 +4,7 @@ from utils import StringSlice
 from collections import Optional
 from memory import UnsafePointer, memcpy, Span, bitcast
 import sys
+from mojo_simdjson.internal.tape_ref import JSON_COUNT_MASK, JSON_VALUE_MASK
 
 
 struct Document:
@@ -17,6 +18,123 @@ struct Document:
     fn __moveinit__(out self, owned other: Self):
         self.tape = other.tape^
         self.string_buf = other.string_buf^
+
+    fn dump_raw_tape(self) -> Tuple[String, Bool]:
+        output = String("")
+        x = self.dump_raw_tape(output)
+        return (output, x)
+
+    fn dump_raw_tape(self, mut output: String) -> Bool:
+        string_length = UInt32(0)
+        tape_idx = 0
+        tape_val = UInt64(self.tape[tape_idx])
+        type_ = UInt8(tape_val >> 56)
+        output += String(tape_idx)
+        output += " : "
+        output += String(type_)
+        tape_idx += 1
+        how_many = 0
+        if type_ == tape_type.ROOT:
+            how_many = Int(self.tape[tape_idx] & JSON_VALUE_MASK)
+        else:
+            return False
+        output += "\t// pointing to "
+        output += String(how_many)
+        output += " (right after last node)\n"
+        payload = UInt64(0)
+        while tape_idx < how_many:
+            output += String(tape_idx)
+            output += " : "
+            tape_val = UInt64(self.tape[tape_idx])
+            payload = tape_val & JSON_VALUE_MASK
+            type_ = UInt8(tape_val >> 56)
+            # Convert to switch statement when supported
+            if type_ == tape_type.STRING:
+                output += 'string "'
+                memcpy(
+                    src=self.string_buf.unsafe_ptr() + payload,
+                    dest=UnsafePointer.address_of(string_length).bitcast[
+                        UInt8
+                    ](),
+                    count=sys.sizeof[UInt32](),
+                )
+                slice_start = Int(payload) + sys.sizeof[UInt32]()
+                output += StringSlice(
+                    unsafe_from_utf8=self.string_buf[
+                        slice_start : slice_start + Int(string_length)
+                    ],
+                )
+                output += '"\n'
+            elif type_ == tape_type.INT64:
+                if tape_idx + 1 >= how_many:
+                    return False
+                output += "integer "
+                tape_idx += 1
+                output += String(Int64(self.tape[tape_idx]))
+                output += "\n"
+            elif type_ == tape_type.UINT64:
+                if tape_idx + 1 >= how_many:
+                    return False
+                output += "unsigned integer "
+                tape_idx += 1
+                output += String(self.tape[tape_idx])
+                output += "\n"
+            elif type_ == tape_type.DOUBLE:
+                output += "float "
+                if tape_idx + 1 >= how_many:
+                    return False
+                answer = Float64(0)
+                tape_idx += 1
+                memcpy(
+                    src=(self.tape.unsafe_ptr() + tape_idx).bitcast[UInt8](),
+                    dest=UnsafePointer.address_of(answer).bitcast[UInt8](),
+                    count=sys.sizeof[Float64](),
+                )
+                output += String(answer)
+                output += "\n"
+            elif type_ == tape_type.NULL_VALUE:
+                output += "null\n"
+            elif type_ == tape_type.TRUE_VALUE:
+                output += "true\n"
+            elif type_ == tape_type.FALSE_VALUE:
+                output += "false\n"
+            elif type_ == tape_type.START_OBJECT:
+                output += "{\t// pointing to next tape location "
+                output += String(UInt32(payload))
+                output += " (first node after the scope), "
+                output += " saturated count "
+                output += String(UInt32(payload >> 32) & JSON_COUNT_MASK)
+                output += "\n"
+            elif type_ == tape_type.END_OBJECT:
+                output += "}\t// pointing to previous tape location "
+                output += String(UInt32(payload))
+                output += " (start of the scope)\n"
+            elif type_ == tape_type.START_ARRAY:
+                output += "[\t// pointing to next tape location "
+                output += String(UInt32(payload))
+                output += " (first node after the scope), "
+                output += " saturated count "
+                output += String(UInt32(payload >> 32) & JSON_COUNT_MASK)
+                output += "\n"
+            elif type_ == tape_type.END_ARRAY:
+                output += "]\t// pointing to previous tape location "
+                output += String(UInt32(payload))
+                output += " (start of the scope)\n"
+            elif type_ == tape_type.ROOT:
+                return False
+            else:
+                return False
+            tape_idx += 1
+        tape_val = UInt64(self.tape[tape_idx])
+        payload = tape_val & JSON_VALUE_MASK
+        type_ = UInt8(tape_val >> 56)
+        output += String(tape_idx)
+        output += " : "
+        output += String(type_)
+        output += "\t// pointing to "
+        output += String(payload)
+        output += " (start root)\n"
+        return True
 
 
 struct DocumentEntryIterator[document_origin: ImmutableOrigin]:

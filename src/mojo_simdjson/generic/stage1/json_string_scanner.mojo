@@ -65,7 +65,6 @@ struct JsonStringScanner:
         bin_display_reverse(in_string, "in_string")
         bin_display_reverse(self.prev_in_string, "prev_in_string")
 
-
         return JsonStringBlock(escaped, quote, in_string)
 
     fn finish(self) -> errors.ErrorType:
