@@ -192,7 +192,7 @@ struct DocumentEntryIterator[document_origin: ImmutableOrigin]:
                 ]
             )
             string_slice = StringSlice[Self.document_origin](
-                ptr=pointer_to_string_slice_start, length=int(string_size)
+                ptr=pointer_to_string_slice_start, length=Int(string_size)
             )
 
             value = Optional[
