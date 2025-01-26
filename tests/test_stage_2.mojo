@@ -14,7 +14,6 @@ from mojo_simdjson.include.dom.document import (
 from python import Python
 
 
-
 @always_inline
 fn get_current_file_path() -> Path:
     return Path(__call_location().file_name)

@@ -5,19 +5,84 @@ from collections import Optional
 from memory import UnsafePointer, memcpy, Span, bitcast
 import sys
 from mojo_simdjson.internal.tape_ref import JSON_COUNT_MASK, JSON_VALUE_MASK
+from mojo_simdjson import errors
+from .. import common_defs, base
 
 
 struct Document:
     var tape: List[UInt64]
     var string_buf: List[UInt8]
+    var allocated_capacity: Int
 
     fn __init__(out self):
         self.tape = List[UInt64]()
         self.string_buf = List[UInt8]()
+        self.allocated_capacity = 0
 
     fn __moveinit__(out self, owned other: Self):
         self.tape = other.tape^
         self.string_buf = other.string_buf^
+        self.allocated_capacity = other.allocated_capacity
+
+    fn capacity(self) -> Int:
+        return self.allocated_capacity
+
+    """
+    inline error_code document::allocate(size_t capacity) noexcept {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
+    allocated_capacity = 0;
+    return SUCCESS;
+  }
+
+  // a pathological input like "[[[[..." would generate capacity tape elements, so
+  // need a capacity of at least capacity + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
+  //where capacity + 1 tape elements are
+  // generated, see issue https://github.com/simdjson/simdjson/issues/345
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
+  // a document with only zero-length strings... could have capacity/3 string
+  // and we would need capacity/3 * 5 bytes on the string buffer
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + SIMDJSON_PADDING, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  if(!(string_buf && tape)) {
+    allocated_capacity = 0;
+    string_buf.reset();
+    tape.reset();
+    return MEMALLOC;
+  }
+  // Technically the allocated_capacity might be larger than capacity
+  // so the next line is pessimistic.
+  allocated_capacity = capacity;
+  return SUCCESS;
+}
+    """
+
+    fn allocate(mut self, capacity: Int) -> errors.ErrorType:
+        if capacity == 0:
+            self.string_buf = List[UInt8]()
+            self.tape = List[UInt64]()
+            self.allocated_capacity = 0
+            return errors.SUCCESS
+
+        # A pathological input like "[[[[..." would generate capacity tape elements, so
+        # need a capacity of at least capacity + 1, but it is also possible to do
+        # worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
+        # here capacity + 1 tape elements are
+        # generated, see issue https://github.com/simdjson/simdjson/issues/345
+        tape_capacity = common_defs.simdjson_roundup_n(capacity + 3, 64)
+        string_capacity = common_defs.simdjson_roundup_n(
+            5 * capacity // 3 + base.SIMDJSON_PADDING, 64
+        )
+        self.string_buf = List[UInt8](capacity=string_capacity)
+        self.tape = List[UInt64](capacity=tape_capacity)
+
+        # Here was a malloc check, but we don't "need" it in Mojo,
+        # because malloc will panic if it fails.
+        self.allocated_capacity = capacity
+        return errors.SUCCESS
 
     fn dump_raw_tape(self) -> Tuple[String, Bool]:
         output = String("")
