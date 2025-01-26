@@ -55,7 +55,7 @@ def test_escaping():
     check_stage2(json_file)
 
 
-def _test_escaping_very_long():
+def test_escaping_very_long():
     json_file = "escaping_very_long.json"
 
     check_stage2(json_file)
