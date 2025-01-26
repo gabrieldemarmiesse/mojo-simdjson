@@ -11,6 +11,8 @@ from mojo_simdjson.include.dom.document import (
     Document,
     DocumentEntry,
 )
+from python import Python
+
 
 
 @always_inline
@@ -37,6 +39,8 @@ def check_stage2(json_file: String):
     tup = parser.document.dump_raw_tape()
     raw_tape = tup[0]
     assert_true(tup[1], "dump_raw_tape failed")
+
+    python_json_decoded = Python.import_module("json").loads(json_input)
 
     _ = json_input
 
