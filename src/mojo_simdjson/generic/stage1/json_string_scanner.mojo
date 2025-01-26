@@ -55,14 +55,16 @@ struct JsonStringScanner:
         backslash = eq["\\"](in_)
         escaped = self.escape_scanner.next(backslash).escaped
         quote = eq['"'](in_) & ~escaped
-
         in_string = prefix_xor(quote) ^ self.prev_in_string
         self.prev_in_string = bitcast[DType.uint64](
             (bitcast[DType.int64](in_string) >> 63)
         )
         bin_display_reverse(escaped, "escaped")
         bin_display_reverse(quote, "quote")
+        bin_display_reverse(prefix_xor(quote), "prefix_xor(quote)")
         bin_display_reverse(in_string, "in_string")
+        bin_display_reverse(self.prev_in_string, "prev_in_string")
+
 
         return JsonStringBlock(escaped, quote, in_string)
 

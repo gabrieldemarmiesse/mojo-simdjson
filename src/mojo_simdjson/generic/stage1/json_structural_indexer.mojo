@@ -9,6 +9,7 @@ from .json_scanner import JsonBlock
 from memory.unsafe import pack_bits
 import bit
 from ...debug import bin_display_reverse
+from utils import StringSlice
 
 
 struct Utf8Checker:
@@ -54,6 +55,12 @@ struct BitIndexer:
             self.write_index(idx, bits, i)
 
         self.tail += count
+
+
+fn print_simd_as_string(x: SIMD[DType.uint8, _]):
+    a = InlineArray[UInt8, x.size](0)
+    a.unsafe_ptr().store(x)
+    print(StringSlice(unsafe_from_utf8=a))
 
 
 struct JsonStructuralIndexer:
@@ -106,9 +113,11 @@ struct JsonStructuralIndexer:
         block: UnsafePointer[UInt8],
         mut reader: BufferBlockReader[step_size],
     ):
-        @parameter
+        #@parameter
         for start in range(0, step_size, 64):
             in_ = (block + start).load[width=64]()
+            print("-" * 64)
+            print_simd_as_string(in_)
             json_block = self.scanner.next(in_)
             self.next(in_, json_block, reader.block_index() + start)
         reader.advance()
@@ -123,10 +132,11 @@ struct JsonStructuralIndexer:
 
         self.checker.check_next_input(in_)
         self.indexer.write(UInt32(index - 64), self.prev_structurals)
-        bin_display_reverse(
-            self.prev_structurals, "prev_structurals, structural_start"
-        )
+
         self.prev_structurals = json_block.structural_start()
+        bin_display_reverse(
+            self.prev_structurals, "structural_start"
+        )
         self.unescaped_chars_error |= json_block.non_quote_inside_string(
             unescaped
         )
