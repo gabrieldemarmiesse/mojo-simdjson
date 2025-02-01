@@ -46,7 +46,6 @@ struct JsonBlock:
     @always_inline
     fn potential_scalar_start(self) -> UInt64:
         value = self._characters.scalar() & ~self.follows_potential_scalar()
-        # bin_display_reverse(value, "potential_scalar_start")
         return value
 
     @always_inline
