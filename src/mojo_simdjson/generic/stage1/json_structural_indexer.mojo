@@ -10,6 +10,7 @@ from memory.unsafe import pack_bits
 import bit
 from ...debug import bin_display_reverse
 from utils import StringSlice
+from ...globals import TRACING_ENABLED
 
 
 struct Utf8Checker:
@@ -116,8 +117,11 @@ struct JsonStructuralIndexer:
         # @parameter
         for start in range(0, step_size, 64):
             in_ = (block + start).load[width=64]()
-            print("-" * 64)
-            print_simd_as_string(in_)
+
+            @parameter
+            if TRACING_ENABLED:
+                print("-" * 64)
+                print_simd_as_string(in_)
             json_block = self.scanner.next(in_)
             self.next(in_, json_block, reader.block_index() + start)
         reader.advance()
@@ -134,6 +138,7 @@ struct JsonStructuralIndexer:
         self.indexer.write(UInt32(index - 64), self.prev_structurals)
 
         self.prev_structurals = json_block.structural_start()
+
         bin_display_reverse(self.prev_structurals, "structural_start")
         self.unescaped_chars_error |= json_block.non_quote_inside_string(
             unescaped
@@ -158,7 +163,6 @@ struct JsonStructuralIndexer:
         parser.n_structural_indexes = (
             Int(self.indexer.tail) - Int(pointer_to_start)
         ) // 4
-        print("n_structural_indexes, in func", parser.n_structural_indexes)
 
         parser.structural_indexes[Int(parser.n_structural_indexes)] = UInt32(
             length

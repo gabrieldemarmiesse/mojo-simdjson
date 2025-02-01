@@ -51,8 +51,6 @@ fn is_valid_true_atom(src: UnsafePointer[UInt8], length: Int) -> Bool:
 fn is_valid_false_atom(src: UnsafePointer[UInt8]) -> Bool:
     str4cmp_result = str4ncmp[alse_as_simd](src + 1)
     not_structural = is_not_structural_or_whitespace(src[5])
-    print("str4cmp_result", str4cmp_result)
-    print("not_structural", not_structural)
     check_as_uint32 = str4cmp_result | not_structural
     return check_as_uint32 == 0
 

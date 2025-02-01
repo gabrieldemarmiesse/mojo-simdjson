@@ -41,7 +41,6 @@ struct JsonIterator:
         walk_state = WalkState.document_start
 
         while True:
-            print("walk_state: ", walk_state)
             if walk_state == WalkState.document_start:
                 if self.at_eof():
                     return errors.EMPTY
@@ -213,7 +212,6 @@ struct JsonIterator:
                 else:
                     error_code = self.visit_primitive(visitor, value)
                     if error_code != errors.SUCCESS:
-                        print("error_code: ", error_code)
                         return error_code
                 walk_state = WalkState.array_continue
                 continue

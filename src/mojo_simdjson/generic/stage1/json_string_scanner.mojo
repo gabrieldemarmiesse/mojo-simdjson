@@ -3,6 +3,7 @@ from ...stuff import eq, prefix_xor
 from memory.unsafe import bitcast
 from ... import errors
 from ...debug import bin_display_reverse
+from ...globals import TRACING_ENABLED
 
 
 @value

@@ -21,7 +21,6 @@ fn get_jsons_directory() -> Path:
 
 
 def assert_strictly_increasing(array: List[UInt32], length: UInt32):
-    print("length", length)
     for i in range(1, length):
         assert_true(array[i - 1] < array[i])
 
@@ -46,7 +45,6 @@ def verify_expected_structural_characters(
     expected_structural_characters: String,
     json_input: String,
 ):
-    print("n_structural_indexes", parser.n_structural_indexes)
     assert_tagging_is_correct(json_input, expected_structural_characters)
     assert_strictly_increasing(
         parser.structural_indexes, parser.n_structural_indexes
@@ -85,13 +83,11 @@ def verify_expected_structural_characters(
 
 
 def check_stage1(json_file: Path):
-    print("testing", json_file)
     json_input_with_expected = json_file.read_text()
     a = json_input_with_expected.splitlines()
     json_input = a[0]
     expected_structural_characters = a[1]
 
-    print(json_input)
     parser = DomParserImplementation()
     error_code = parser.stage1(json_input)
     assert_equal(error_code, 0, "unexpected error code")
@@ -124,3 +120,7 @@ def test_simple_json():
             # if entry[] == "escaping_very_long.json":
             #    continue
             check_stage1(actual_file)
+
+
+def main():
+    test_simple_json()
