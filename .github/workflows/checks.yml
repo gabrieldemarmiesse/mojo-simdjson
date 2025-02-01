@@ -21,7 +21,7 @@ jobs:
           echo "$HOME/.modular/bin" >> $GITHUB_PATH
 
       - name: Check format
-        run: magic run --frozen mojo format 
+        run: magic run mojo test -I ./src tests
   
   pre-commit:
     runs-on: ubuntu-latest
