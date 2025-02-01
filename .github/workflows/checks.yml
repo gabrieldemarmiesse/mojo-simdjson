@@ -1,0 +1,45 @@
+name: Checks
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download Magic CLI
+        run: |
+          curl -ssL https://magic.modular.com/cfba4c92-2390-4b86-93de-04b2f47114d5 | bash
+          # Add magic to PATH
+          echo "$HOME/.modular/bin" >> $GITHUB_PATH
+
+      - name: Check format
+        run: magic run --frozen mojo format 
+  
+  pre-commit:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download Magic CLI
+        run: |
+          curl -ssL https://magic.modular.com/cfba4c92-2390-4b86-93de-04b2f47114d5 | bash
+          # Add magic to PATH
+          echo "$HOME/.modular/bin" >> $GITHUB_PATH
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit install
+      
+      - name: Run pre-commit
+        run: magic run pre-commit run --all-files
